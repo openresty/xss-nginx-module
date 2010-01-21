@@ -2,7 +2,7 @@
 
 # this file is mostly meant to be used by the author himself.
 
-ragel -G2 src/*.rl
+ragel -G2 src/ngx_http_xss_util.rl
 
 if [ $? != 0 ]; then
     echo 'Failed to generate the ngx_http_xss_util.c.' 1>&2

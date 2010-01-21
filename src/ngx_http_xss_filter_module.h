@@ -7,16 +7,19 @@
 
 
 typedef struct {
-    ngx_str_t     before_body;
-    ngx_str_t     after_body;
+    ngx_str_t       callback_arg;
+    ngx_flag_t      get_enabled;
 
     ngx_hash_t    types;
     ngx_array_t  *types_keys;
+
 } ngx_http_xss_conf_t;
 
 
 typedef struct {
-    ngx_uint_t    before_body_sent;
+    ngx_str_t       callback;
+    ngx_flag_t      before_body_sent;
+
 } ngx_http_xss_ctx_t;
 
 
