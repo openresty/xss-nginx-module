@@ -2,6 +2,10 @@
  * Copyright (C) agentzh
  */
 
+#define DDEBUG 1
+#include "ddebug.h"
+
+
 #include "ngx_http_xss_filter_module.h"
 #include "ngx_http_xss_util.h"
 
@@ -93,32 +97,38 @@ ngx_http_xss_header_filter(ngx_http_request_t *r)
     ngx_str_t             callback;
 
     if (r->headers_out.status != NGX_HTTP_OK || r != r->main) {
+        dd("skipped: status not 200 or in subrequest");
         return ngx_http_next_header_filter(r);
     }
 
     conf = ngx_http_get_module_loc_conf(r, ngx_http_xss_filter_module);
 
     if ( ! conf->get_enabled || r->method != NGX_HTTP_GET) {
+        dd("skipped: get_enabled disabled or the current method is not GET");
         return ngx_http_next_header_filter(r);
     }
 
     if (conf->callback_arg.len == 0) {
+        dd("skipped: callback_arg emtpy");
         return ngx_http_next_header_filter(r);
     }
 
     if (ngx_http_test_content_type(r, &conf->types) == NULL) {
+        dd("skipped: content type test not passed");
         return ngx_http_next_header_filter(r);
     }
 
     if (ngx_http_arg(r, conf->callback_arg.data, conf->callback_arg.len,
                 &callback) != NGX_OK)
     {
+        dd("skipped: no callback arg found in the current request: %.*s", conf->callback_arg.len, conf->callback_arg.data);
         return ngx_http_next_header_filter(r);
     }
 
     if (ngx_http_xss_test_callback((char *) callback.data, callback.len)
             != NGX_OK)
     {
+        dd("skipped: bad callback arg");
         return ngx_http_next_header_filter(r);
     }
 
@@ -173,12 +183,18 @@ ngx_http_xss_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
     if (!ctx->before_body_sent) {
         ctx->before_body_sent = 1;
 
+        dd("callback: %.*s", ctx->callback.len, ctx->callback.data);
+
         len = ctx->callback.len + sizeof("(") - 1;
 
         b = ngx_create_temp_buf(r->pool, len);
         if (b == NULL) {
             return NGX_ERROR;
         }
+
+        b->last = ngx_copy(b->last, ctx->callback.data, ctx->callback.len);
+
+        *b->last++ = '(';
 
         cl = ngx_alloc_chain_link(r->pool);
         if (cl == NULL) {
@@ -208,6 +224,10 @@ ngx_http_xss_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
         if (b == NULL) {
             return NGX_ERROR;
         }
+
+        *b->last++ = ')';
+        *b->last++ = ';';
+
         b->last_buf = 1;
 
         cl = ngx_alloc_chain_link(r->pool);
@@ -217,6 +237,7 @@ ngx_http_xss_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
 
         cl->buf = b;
         cl->next = NULL;
+        *ll = cl;
 
         ngx_http_set_ctx(r, NULL, ngx_http_xss_filter_module);
     }
@@ -274,7 +295,7 @@ ngx_http_xss_merge_conf(ngx_conf_t *cf, void *parent, void *child)
 
     if (ngx_http_merge_types(cf, &conf->types_keys, &conf->types,
                              &prev->types_keys, &prev->types,
-                             ngx_http_html_default_types)
+                             ngx_http_xss_default_types)
         != NGX_OK)
     {
         return NGX_CONF_ERROR;
