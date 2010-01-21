@@ -1,0 +1,135 @@
+
+#line 1 "src/ngx_http_xss_util.rl"
+#define DDEBUG 1
+#include "ddebug.h"
+
+#include "ngx_http_xss_util.h"
+
+
+#line 7 "src/ngx_http_xss_util.rl"
+
+#line 12 "src/ngx_http_xss_util.c"
+static const int javascript_start = 1;
+static const int javascript_first_final = 6;
+static const int javascript_error = 0;
+
+static const int javascript_en_main = 1;
+
+
+#line 8 "src/ngx_http_xss_util.rl"
+
+ngx_int_t ngx_http_xss_test_callback(char *data, size_t len)
+{
+    char *p = data;
+    char *pe = data + len;
+    int cs;
+
+    
+#line 29 "src/ngx_http_xss_util.c"
+	{
+	cs = javascript_start;
+	}
+
+#line 34 "src/ngx_http_xss_util.c"
+	{
+	if ( p == pe )
+		goto _test_eof;
+	switch ( cs )
+	{
+case 1:
+	if ( (*p) == 36 )
+		goto st6;
+	if ( (*p) > 90 ) {
+		if ( 97 <= (*p) && (*p) <= 122 )
+			goto st6;
+	} else if ( (*p) >= 65 )
+		goto st6;
+	goto st0;
+st0:
+cs = 0;
+	goto _out;
+st6:
+	if ( ++p == pe )
+		goto _test_eof6;
+case 6:
+	switch( (*p) ) {
+		case 36: goto st6;
+		case 91: goto st2;
+		case 95: goto st6;
+	}
+	if ( (*p) < 65 ) {
+		if ( 48 <= (*p) && (*p) <= 57 )
+			goto st6;
+	} else if ( (*p) > 90 ) {
+		if ( 97 <= (*p) && (*p) <= 122 )
+			goto st6;
+	} else
+		goto st6;
+	goto st0;
+st2:
+	if ( ++p == pe )
+		goto _test_eof2;
+case 2:
+	if ( (*p) == 46 )
+		goto st3;
+	if ( 48 <= (*p) && (*p) <= 57 )
+		goto st5;
+	goto st0;
+st3:
+	if ( ++p == pe )
+		goto _test_eof3;
+case 3:
+	if ( 48 <= (*p) && (*p) <= 57 )
+		goto st4;
+	goto st0;
+st4:
+	if ( ++p == pe )
+		goto _test_eof4;
+case 4:
+	if ( (*p) == 93 )
+		goto st7;
+	if ( 48 <= (*p) && (*p) <= 57 )
+		goto st4;
+	goto st0;
+st7:
+	if ( ++p == pe )
+		goto _test_eof7;
+case 7:
+	goto st0;
+st5:
+	if ( ++p == pe )
+		goto _test_eof5;
+case 5:
+	switch( (*p) ) {
+		case 46: goto st3;
+		case 93: goto st7;
+	}
+	if ( 48 <= (*p) && (*p) <= 57 )
+		goto st5;
+	goto st0;
+	}
+	_test_eof6: cs = 6; goto _test_eof; 
+	_test_eof2: cs = 2; goto _test_eof; 
+	_test_eof3: cs = 3; goto _test_eof; 
+	_test_eof4: cs = 4; goto _test_eof; 
+	_test_eof7: cs = 7; goto _test_eof; 
+	_test_eof5: cs = 5; goto _test_eof; 
+
+	_test_eof: {}
+	_out: {}
+	}
+
+#line 27 "src/ngx_http_xss_util.rl"
+
+
+    if (cs < 
+#line 127 "src/ngx_http_xss_util.c"
+6
+#line 29 "src/ngx_http_xss_util.rl"
+ || p != pe) {
+        return NGX_DECLINED;
+    }
+
+    return NGX_OK;
+}
+
