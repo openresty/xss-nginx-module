@@ -9,8 +9,10 @@
 #include "ngx_http_xss_filter_module.h"
 #include "ngx_http_xss_util.h"
 
+#include <nginx.h>
 #include <ngx_config.h>
 
+#define ngx_http_xss_default_output_type "application/x-javascript"
 
 static ngx_str_t  ngx_http_xss_default_types[] = {
     ngx_string("application/json"),
@@ -42,13 +44,21 @@ static ngx_command_t  ngx_http_xss_commands[] = {
       offsetof(ngx_http_xss_conf_t, callback_arg),
       NULL },
 
-    { ngx_string("xss_content_types"),
+    { ngx_string("xss_input_types"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF
           |NGX_CONF_1MORE|NGX_HTTP_LIF_CONF,
       ngx_http_types_slot,
       NGX_HTTP_LOC_CONF_OFFSET,
-      offsetof(ngx_http_xss_conf_t, types_keys),
+      offsetof(ngx_http_xss_conf_t, input_types_keys),
       &ngx_http_xss_default_types[0] },
+
+    { ngx_string("xss_output_type"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF
+          |NGX_CONF_1MORE|NGX_HTTP_LIF_CONF,
+      ngx_conf_set_str_slot,
+      NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_xss_conf_t, output_type),
+      NULL },
 
       ngx_null_command
 };
@@ -114,7 +124,7 @@ ngx_http_xss_header_filter(ngx_http_request_t *r)
         return ngx_http_next_header_filter(r);
     }
 
-    if (ngx_http_test_content_type(r, &conf->types) == NULL) {
+    if (ngx_http_test_content_type(r, &conf->input_types) == NULL) {
         dd("skipped: content type test not passed");
         return ngx_http_next_header_filter(r);
     }
@@ -172,6 +182,9 @@ ngx_http_xss_header_filter(ngx_http_request_t *r)
     ctx->callback = callback;
 
     ngx_http_set_ctx(r, ctx, ngx_http_xss_filter_module);
+
+    r->headers_out.content_type = conf->output_type;
+    r->headers_out.content_type_len = conf->output_type.len;
 
     ngx_http_clear_content_length(r);
     ngx_http_clear_accept_ranges(r);
@@ -298,8 +311,9 @@ ngx_http_xss_create_conf(ngx_conf_t *cf)
      * set by ngx_pcalloc():
      *
      *     conf->callback_arg = { 0, NULL };
-     *     conf->types = { NULL };
-     *     conf->types_keys = NULL;
+     *     conf->input_types = { NULL };
+     *     conf->input_types_keys = NULL;
+     *     conf->output_type = { 0, NULL };
      */
 
     conf->get_enabled = NGX_CONF_UNSET;
@@ -318,13 +332,22 @@ ngx_http_xss_merge_conf(ngx_conf_t *cf, void *parent, void *child)
 
     ngx_conf_merge_value(conf->get_enabled, prev->get_enabled, 0);
 
-    if (ngx_http_merge_types(cf, &conf->types_keys, &conf->types,
-                             &prev->types_keys, &prev->types,
-                             ngx_http_xss_default_types)
+#if defined(nginx_version) && nginx_version >= 8029
+    if (ngx_http_merge_types(cf, &conf->input_types_keys, &conf->input_types,
+                 &prev->input_types_keys, &prev->input_types,
+                     ngx_http_xss_default_types)
         != NGX_OK)
+#else /* 0.7.x or 0.8.x < 0.8.29 */
+    if (ngx_http_merge_types(cf, conf->input_types_keys, &conf->input_types,
+                 prev->input_types_keys, &prev->input_types,
+                     ngx_http_xss_default_types)
+        != NGX_OK)
+#endif
     {
         return NGX_CONF_ERROR;
     }
+
+    ngx_conf_merge_str_value(conf->output_type, prev->output_type, ngx_http_xss_default_output_type);
 
     return NGX_CONF_OK;
 }
