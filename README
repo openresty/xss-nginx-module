@@ -8,7 +8,8 @@ Synopsis
    # is the original response body of the /foo location.
    server {
         location /foo {
-            default_type 'application/json';
+            # your content handler goes here...
+
             xss_get on;
             xss_callback_arg 'callback';
             xss_input_types 'application/json'; # default
