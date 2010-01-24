@@ -120,7 +120,9 @@ ngx_http_xss_header_filter(ngx_http_request_t *r)
     }
 
     if (conf->callback_arg.len == 0) {
-        dd("skipped: callback_arg emtpy");
+        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                "xss: xss_get is enabled but no xss_callback_arg specified");
+
         return ngx_http_next_header_filter(r);
     }
 

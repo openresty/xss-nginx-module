@@ -158,3 +158,19 @@ Content-Type: text/html
 bar([]
 );
 
+
+=== TEST 8: xss_get is on while no xss_callback_arg
+--- config
+    location /foo {
+        default_type 'application/json';
+        xss_get on;
+        #xss_callback_arg foo;
+        echo '[]';
+    }
+--- request
+GET /foo?foo=bar
+--- response_headers_like
+Content-Type: application/json
+--- response_body
+[]
+
