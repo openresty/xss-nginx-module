@@ -36,6 +36,9 @@ ngx_int_t ngx_http_xss_test_callback(char *data, size_t len)
 		goto _test_eof;
 	switch ( cs )
 	{
+st1:
+	if ( ++p == pe )
+		goto _test_eof1;
 case 1:
 	if ( (*p) == 36 )
 		goto st6;
@@ -54,6 +57,7 @@ st6:
 case 6:
 	switch( (*p) ) {
 		case 36: goto st6;
+		case 46: goto st1;
 		case 91: goto st2;
 		case 95: goto st6;
 	}
@@ -108,6 +112,7 @@ case 5:
 		goto st5;
 	goto st0;
 	}
+	_test_eof1: cs = 1; goto _test_eof; 
 	_test_eof6: cs = 6; goto _test_eof; 
 	_test_eof2: cs = 2; goto _test_eof; 
 	_test_eof3: cs = 3; goto _test_eof; 
@@ -123,7 +128,7 @@ case 5:
 
 
     if (cs < 
-#line 127 "src/ngx_http_xss_util.c"
+#line 132 "src/ngx_http_xss_util.c"
 6
 #line 29 "src/ngx_http_xss_util.rl"
  || p != pe) {

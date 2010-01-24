@@ -92,9 +92,10 @@ static ngx_http_output_body_filter_pt    ngx_http_next_body_filter;
 static ngx_int_t
 ngx_http_xss_header_filter(ngx_http_request_t *r)
 {
-    ngx_http_xss_ctx_t   *ctx;
-    ngx_http_xss_conf_t  *conf;
-    ngx_str_t             callback;
+    ngx_http_xss_ctx_t          *ctx;
+    ngx_http_xss_conf_t         *conf;
+    ngx_str_t                    callback;
+    u_char                      *p, *src, *dst;
 
     if (r->headers_out.status != NGX_HTTP_OK || r != r->main) {
         dd("skipped: status not 200 or in subrequest");
@@ -121,14 +122,38 @@ ngx_http_xss_header_filter(ngx_http_request_t *r)
     if (ngx_http_arg(r, conf->callback_arg.data, conf->callback_arg.len,
                 &callback) != NGX_OK)
     {
-        dd("skipped: no callback arg found in the current request: %.*s", conf->callback_arg.len, conf->callback_arg.data);
+        dd("skipped: no callback arg found in the current request: %.*s",
+                conf->callback_arg.len, conf->callback_arg.data);
+
         return ngx_http_next_header_filter(r);
     }
+
+    p = ngx_palloc(r->pool, callback.len);
+    if (p == NULL) {
+        return NGX_ERROR;
+    }
+
+    src = callback.data; dst = p;
+
+    ngx_unescape_uri(&dst, &src, callback.len,
+            NGX_UNESCAPE_URI_COMPONENT);
+
+    if (src != callback.data + callback.len) {
+        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                "xss: unescape uri: input data not consumed completely");
+
+        return NGX_ERROR;
+    }
+
+    callback.data = p;
+    callback.len = dst - p;
 
     if (ngx_http_xss_test_callback((char *) callback.data, callback.len)
             != NGX_OK)
     {
-        dd("skipped: bad callback arg");
+        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                "xss: bad callback argument: \"%V\"", &callback);
+
         return ngx_http_next_header_filter(r);
     }
 

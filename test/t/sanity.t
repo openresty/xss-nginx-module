@@ -66,3 +66,20 @@ Content-Type: application/json
 bar([]
 );
 
+
+=== TEST 4: uri escaped
+--- config
+    location /foo {
+        default_type 'application/json';
+        xss_get on;
+        xss_callback_arg _callback;
+        echo '[]';
+    }
+--- request
+GET /foo?_callback=OpenResty.callbackMap%5b32%5D
+--- response_headers_like
+Content-Type: application/json
+--- response_body chop
+OpenResty.callbackMap[32]([]
+);
+

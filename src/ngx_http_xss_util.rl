@@ -19,7 +19,7 @@ ngx_int_t ngx_http_xss_test_callback(char *data, size_t len)
               | [0-9]+
               ;
 
-        main := identifier (identifier)*
+        main := identifier ( '.' identifier )*
                   ('[' index ']')? ;
 
         write init;
