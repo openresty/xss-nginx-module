@@ -159,7 +159,8 @@ bar([]
 );
 
 
-=== TEST 8: xss_get is on while no xss_callback_arg
+
+=== TEST 9: xss_get is on while no xss_callback_arg
 --- config
     location /foo {
         default_type 'application/json';
@@ -173,4 +174,43 @@ GET /foo?foo=bar
 Content-Type: application/json
 --- response_body
 []
+
+
+
+=== TEST 10: xss_get is on while no xss_callback_arg
+--- config
+    location /foo {
+        default_type "application/json";
+        echo '{"errcode":400,"errstr":"Bad Request"}';
+
+        xss_get on; # enable cross-site GET support
+        xss_callback_arg callback; # use $arg_callback
+    }
+--- request
+    GET /foo?callback=blah
+--- response_headers
+Content-Type: application/x-javascript
+--- response_body chop
+blah({"errcode":400,"errstr":"Bad Request"}
+);
+
+
+
+=== TEST 11: xss_get is on while no xss_callback_arg & xss_output_type
+--- config
+    location /foo {
+        default_type "application/json";
+        echo '{"errcode":400,"errstr":"Bad Request"}';
+
+        xss_get on; # enable cross-site GET support
+        xss_callback_arg callback; # use $arg_callback
+        xss_output_type text/javascript;
+    }
+--- request
+    GET /foo?callback=blah
+--- response_headers
+Content-Type: text/javascript
+--- response_body chop
+blah({"errcode":400,"errstr":"Bad Request"}
+);
 
