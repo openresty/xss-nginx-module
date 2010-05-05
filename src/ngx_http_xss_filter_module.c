@@ -66,7 +66,7 @@ static ngx_command_t  ngx_http_xss_commands[] = {
 
 static ngx_http_module_t  ngx_http_xss_filter_module_ctx = {
     NULL,                                  /* preconfiguration */
-    ngx_http_xss_filter_init,         /* postconfiguration */
+    ngx_http_xss_filter_init,              /* postconfiguration */
 
     NULL,                                  /* create main configuration */
     NULL,                                  /* init main configuration */
@@ -81,8 +81,8 @@ static ngx_http_module_t  ngx_http_xss_filter_module_ctx = {
 
 ngx_module_t  ngx_http_xss_filter_module = {
     NGX_MODULE_V1,
-    &ngx_http_xss_filter_module_ctx,  /* module context */
-    ngx_http_xss_commands,            /* module directives */
+    &ngx_http_xss_filter_module_ctx,       /* module context */
+    ngx_http_xss_commands,                 /* module directives */
     NGX_HTTP_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
