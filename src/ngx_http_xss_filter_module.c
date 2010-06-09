@@ -108,6 +108,8 @@ ngx_http_xss_header_filter(ngx_http_request_t *r)
     u_char                      *p, *src, *dst;
 
     if (r->headers_out.status != NGX_HTTP_OK || r != r->main) {
+        /* TODO we should handle 201 here as well */
+
         dd("skipped: status not 200 or in subrequest");
         return ngx_http_next_header_filter(r);
     }
