@@ -23,6 +23,10 @@ Description
     cross-site GET is supported. But cross-site POST will be added
     in the future.
 
+    The cross-site GET is currently implemented as JSONP
+    (or "JSON with padding"). See <http://en.wikipedia.org/wiki/JSON#JSONP >
+    for more details.
+
 Installation
     Grab the nginx source code from nginx.net (<http://nginx.net/>), for
     example, the version 0.8.32 (see nginx compatibility), and then build
