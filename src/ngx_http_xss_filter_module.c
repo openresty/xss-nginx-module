@@ -137,7 +137,8 @@ ngx_http_xss_header_filter(ngx_http_request_t *r)
                 &callback) != NGX_OK)
     {
         dd("skipped: no callback arg found in the current request: %.*s",
-                conf->callback_arg.len, conf->callback_arg.data);
+                (int) conf->callback_arg.len,
+                conf->callback_arg.data);
 
         return ngx_http_next_header_filter(r);
     }
@@ -187,8 +188,15 @@ ngx_http_xss_header_filter(ngx_http_request_t *r)
 
     ngx_http_set_ctx(r, ctx, ngx_http_xss_filter_module);
 
+    dd("Setting content type...");
+
     r->headers_out.content_type = conf->output_type;
     r->headers_out.content_type_len = conf->output_type.len;
+    r->headers_out.content_type_lowcase = NULL;
+
+    dd("output type: %.*s (%d)", (int) conf->output_type.len,
+            conf->output_type.data,
+            (int) conf->output_type.len);
 
     ngx_http_clear_content_length(r);
     ngx_http_clear_accept_ranges(r);
@@ -225,7 +233,8 @@ ngx_http_xss_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
     if (!ctx->before_body_sent) {
         ctx->before_body_sent = 1;
 
-        dd("callback: %.*s", ctx->callback.len, ctx->callback.data);
+        dd("callback: %.*s", (int) ctx->callback.len,
+                ctx->callback.data);
 
         len = ctx->callback.len + sizeof("(") - 1;
 
