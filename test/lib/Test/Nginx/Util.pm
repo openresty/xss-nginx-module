@@ -3,17 +3,17 @@ package Test::Nginx::Util;
 use strict;
 use warnings;
 
-our $VERSION = '0.09';
+our $VERSION = '0.11';
 
 use base 'Exporter';
 
 use POSIX qw( SIGQUIT SIGKILL SIGTERM );
 use File::Spec ();
 use HTTP::Response;
-use Module::Install::Can;
 use Cwd qw( cwd );
 use List::Util qw( shuffle );
 use Time::HiRes qw( sleep );
+use ExtUtils::MakeMaker ();
 
 our $LatestNginxVersion = 0.008039;
 
@@ -23,7 +23,7 @@ our $Profiling = 0;
 our $RepeatEach = 1;
 our $MAX_PROCESSES = 10;
 
-our $NoShuffle = 0;
+our $NoShuffle = $ENV{TEST_NGINX_NO_SHUFFLE} || 0;
 
 our $UseValgrind = $ENV{TEST_NGINX_USE_VALGRIND};
 
@@ -45,12 +45,21 @@ our $NginxBinary            = $ENV{TEST_NGINX_BINARY} || 'nginx';
 our $Workers                = 1;
 our $WorkerConnections      = 64;
 our $LogLevel               = $ENV{TEST_NGINX_LOG_LEVEL} || 'debug';
-our $MasterProcessEnabled   = 'off';
+our $MasterProcessEnabled   = $ENV{TEST_NGINX_MASTER_PROCESS} || 'off';
 our $DaemonEnabled          = 'on';
-our $ServerPort             = $ENV{TEST_NGINX_PORT} || $ENV{TEST_NGINX_SERVER_PORT} || 1984;
-our $ServerPortForClient    = $ENV{TEST_NGINX_PORT} || $ENV{TEST_NGINX_CLIENT_PORT} || 1984;
+our $ServerPort             = $ENV{TEST_NGINX_SERVER_PORT} || $ENV{TEST_NGINX_PORT} || 1984;
+our $ServerPortForClient    = $ENV{TEST_NGINX_CLIENT_PORT} || $ENV{TEST_NGINX_PORT} || 1984;
 our $NoRootLocation         = 0;
 our $TestNginxSleep         = $ENV{TEST_NGINX_SLEEP} || 0;
+our $BuildSlaveName         = $ENV{TEST_NGINX_BUILDSLAVE};
+
+sub server_port (@) {
+    if (@_) {
+        $ServerPort = shift;
+    } else {
+        $ServerPort;
+    }
+}
 
 sub repeat_each (@) {
     if (@_) {
@@ -130,6 +139,7 @@ our @EXPORT_OK = qw(
     no_root_location
     html_dir
     server_root
+    server_port
 );
 
 
@@ -152,7 +162,7 @@ our $TODO;
 
 #our ($PrevRequest, $PrevConfig);
 
-our $ServRoot   = $ENV{TEST_NGINX_ROOT} || File::Spec->catfile(cwd(), 't/servroot');
+our $ServRoot   = $ENV{TEST_NGINX_SERVROOT} || File::Spec->catfile(cwd() || '.', 't/servroot');
 our $LogDir     = File::Spec->catfile($ServRoot, 'logs');
 our $ErrLogFile = File::Spec->catfile($LogDir, 'error.log');
 our $AccLogFile = File::Spec->catfile($LogDir, 'access.log');
@@ -167,6 +177,10 @@ sub html_dir () {
 
 sub server_root () {
     return $ServRoot;
+}
+
+sub bail_out ($) {
+    Test::More::BAIL_OUT(@_);
 }
 
 sub run_tests () {
@@ -190,7 +204,7 @@ sub run_tests () {
 sub setup_server_root () {
     if (-d $ServRoot) {
         # Take special care, so we won't accidentally remove
-        # real user data when TEST_NGINX_ROOT is mis-used.
+        # real user data when TEST_NGINX_SERVROOT is mis-used.
         system("rm -rf $ConfDir > /dev/null") == 0 or
             die "Can't remove $ConfDir";
         system("rm -rf $HtmlDir > /dev/null") == 0 or
@@ -269,6 +283,8 @@ sub write_user_files ($) {
 
 sub write_config_file ($$$) {
     my ($config, $http_config, $main_config) = @_;
+
+    $http_config = expand_env_in_config($http_config);
 
     if (!defined $config) {
         $config = '';
@@ -359,7 +375,7 @@ sub get_nginx_version () {
 sub get_pid_from_pidfile ($) {
     my ($name) = @_;
     open my $in, $PidFile or
-        Test::More::BAIL_OUT("$name - Failed to open the pid file $PidFile for reading: $!");
+        bail_out("$name - Failed to open the pid file $PidFile for reading: $!");
     my $pid = do { local $/; <$in> };
     #warn "Pid: $pid\n";
     close $in;
@@ -400,19 +416,60 @@ sub parse_headers ($) {
     return \%headers;
 }
 
+sub expand_env_in_config ($) {
+    my $config = shift;
+
+    if (!defined $config) {
+        return;
+    }
+
+    $config =~ s/\$(TEST_NGINX_[_A-Z]+)/
+        if (!defined $ENV{$1}) {
+            bail_out "No environment $1 defined.\n";
+        }
+        $ENV{$1}/eg;
+
+    $config;
+}
+
+sub check_if_missing_directives () {
+    open my $in, $ErrLogFile or
+        bail_out "check_if_missing_directives: Cannot open $ErrLogFile for reading: $!\n";
+
+    while (<$in>) {
+        #warn $_;
+        if (/\[emerg\] \S+?: unknown directive "([^"]+)"/) {
+            #warn "MATCHED!!! $1";
+            return $1;
+        }
+    }
+
+    close $in;
+
+    #warn "NOT MATCHED!!!";
+
+    return 0;
+}
+
 sub run_test ($) {
     my $block = shift;
     my $name = $block->name;
 
     my $config = $block->config;
+
+    $config = expand_env_in_config($config);
+
+    my $dry_run = 0;
+
     if (!defined $config) {
-        Test::More::BAIL_OUT("$name - No '--- config' section specified");
+        bail_out("$name - No '--- config' section specified");
         #$config = $PrevConfig;
         die;
     }
 
     my $skip_nginx = $block->skip_nginx;
     my $skip_nginx2 = $block->skip_nginx2;
+    my $skip_slave = $block->skip_slave;
     my ($tests_to_skip, $should_skip, $skip_reason);
     if (defined $skip_nginx) {
         if ($skip_nginx =~ m{
@@ -431,7 +488,7 @@ sub run_test ($) {
                 $should_skip = 1;
             }
         } else {
-            Test::More::BAIL_OUT("$name - Invalid --- skip_nginx spec: " .
+            bail_out("$name - Invalid --- skip_nginx spec: " .
                 $skip_nginx);
             die;
         }
@@ -460,8 +517,30 @@ sub run_test ($) {
                 $should_skip = 1;
             }
         } else {
-            Test::More::BAIL_OUT("$name - Invalid --- skip_nginx2 spec: " .
+            bail_out("$name - Invalid --- skip_nginx2 spec: " .
                 $skip_nginx2);
+            die;
+        }
+    } elsif (defined $skip_slave and defined $BuildSlaveName) {
+        if ($skip_slave =~ m{
+              ^ \s* (\d+) \s* : \s*
+                (\w+) \s* (?: (\w+) \s* )?  (?: (\w+) \s* )?
+                (?: \s* : \s* (.*) )? \s*$}x)
+        {
+            $tests_to_skip = $1;
+            my ($slave1, $slave2, $slave3) = ($2, $3, $4);
+            $skip_reason = $5;
+            if ((defined $slave1 and $slave1 eq "all")
+                or (defined $slave1 and $slave1 eq $BuildSlaveName)
+                or (defined $slave2 and $slave2 eq $BuildSlaveName)
+                or (defined $slave3 and $slave3 eq $BuildSlaveName)
+                )
+            {
+                $should_skip = 1;
+            }
+        } else {
+            bail_out("$name - Invalid --- skip_slave spec: " .
+                $skip_slave);
             die;
         }
     }
@@ -487,7 +566,7 @@ sub run_test ($) {
                 $should_todo = 1;
             }
         } else {
-            Test::More::BAIL_OUT("$name - Invalid --- todo_nginx spec: " .
+            bail_out("$name - Invalid --- todo_nginx spec: " .
                 $todo_nginx);
             die;
         }
@@ -537,8 +616,9 @@ start_nginx:
             setup_server_root();
             write_user_files($block);
             write_config_file($config, $block->http_config, $block->main_config);
-            if ( ! Module::Install::Can->can_run($NginxBinary) ) {
-                Test::More::BAIL_OUT("$name - Cannot find the nginx executable in the PATH environment");
+            #warn "nginx binary: $NginxBinary";
+            if ( ! can_run($NginxBinary) ) {
+                bail_out("$name - Cannot find the nginx executable in the PATH environment");
                 die;
             }
         #if (system("nginx -p $ServRoot -c $ConfFile -t") != 0) {
@@ -594,7 +674,14 @@ start_nginx:
                 }
             } else {
                 if (system($cmd) != 0) {
-                    Test::More::BAIL_OUT("$name - Cannot start nginx using command \"$cmd\".");
+                    if ($ENV{TEST_NGINX_IGNORE_MISSING_DIRECTIVES} and
+                            my $directive = check_if_missing_directives())
+                    {
+                        $dry_run = $directive;
+
+                    } else {
+                        bail_out("$name - Cannot start nginx using command \"$cmd\".");
+                    }
                 }
             }
 
@@ -605,7 +692,7 @@ start_nginx:
     if ($block->init) {
         eval $block->init;
         if ($@) {
-            Test::More::BAIL_OUT("$name - init failed: $@");
+            bail_out("$name - init failed: $@");
         }
     }
 
@@ -615,23 +702,26 @@ start_nginx:
             SKIP: {
                 Test::More::skip("$name - $skip_reason", $tests_to_skip);
 
-                $RunTestHelper->($block);
+                $RunTestHelper->($block, $dry_run);
             }
         } elsif ($should_todo) {
             TODO: {
                 local $TODO = "$name - $todo_reason";
 
-                $RunTestHelper->($block);
+                $RunTestHelper->($block, $dry_run);
             }
         } else {
-            $RunTestHelper->($block);
+            $RunTestHelper->($block, $dry_run);
         }
     }
 
     if (my $total_errlog = $ENV{TEST_NGINX_ERROR_LOG}) {
         my $errlog = "$LogDir/error.log";
         if (-s $errlog) {
-            system("(echo; echo \"=== $0 $name ===\") >> $total_errlog") == 0 and
+            open my $out, ">>$total_errlog" or
+                die "Failed to append test case title to $total_errlog: $!\n";
+            print $out "\n=== $0 $name\n";
+            close $out;
             system("cat $errlog >> $total_errlog") == 0 or
                 die "Failed to append $errlog to $total_errlog. Abort.\n";
         }
@@ -695,6 +785,23 @@ END {
             }
         }
     }
+}
+
+# check if we can run some command
+sub can_run {
+	my ($cmd) = @_;
+
+        #warn "can run: @_\n";
+	my $_cmd = $cmd;
+	return $_cmd if (-x $_cmd or $_cmd = MM->maybe_command($_cmd));
+
+	for my $dir ((split /$Config::Config{path_sep}/, $ENV{PATH}), '.') {
+		next if $dir eq '';
+		my $abs = File::Spec->catfile($dir, $_[0]);
+		return $abs if (-x $abs or $abs = MM->maybe_command($abs));
+	}
+
+	return;
 }
 
 1;
