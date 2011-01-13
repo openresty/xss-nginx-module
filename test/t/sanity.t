@@ -238,7 +238,8 @@ blah(hello);
 Content-Type: application/x-javascript
 
 
-=== TEST 12: check status and NO override status
+
+=== TEST 13: check status and NO override status
 --- config
     location /foo {
         xss_get on;
