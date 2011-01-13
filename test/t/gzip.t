@@ -15,7 +15,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 11: xss_get is on while no xss_callback_arg & xss_output_type
+=== TEST 1: xss_get is on while no xss_callback_arg & xss_output_type
 --- config
     xss_get on; # enable cross-site GET support
     xss_callback_arg c; # use $arg_callback

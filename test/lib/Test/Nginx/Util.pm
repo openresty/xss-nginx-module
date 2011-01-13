@@ -31,6 +31,10 @@ sub no_shuffle () {
     $NoShuffle = 1;
 }
 
+sub no_nginx_manager () {
+    $NoNginxManager = 1;
+}
+
 our $ForkManager;
 
 if ($Profiling || $UseValgrind) {
@@ -140,6 +144,7 @@ our @EXPORT_OK = qw(
     html_dir
     server_root
     server_port
+    no_nginx_manager
 );
 
 
@@ -423,7 +428,7 @@ sub expand_env_in_config ($) {
         return;
     }
 
-    $config =~ s/\$(TEST_NGINX_[_A-Z]+)/
+    $config =~ s/\$(TEST_NGINX_[_A-Z0-9]+)/
         if (!defined $ENV{$1}) {
             bail_out "No environment $1 defined.\n";
         }

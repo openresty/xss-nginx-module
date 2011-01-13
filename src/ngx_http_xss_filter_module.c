@@ -52,6 +52,22 @@ static ngx_command_t  ngx_http_xss_commands[] = {
       offsetof(ngx_http_xss_conf_t, input_types_keys),
       &ngx_http_xss_default_types[0] },
 
+    { ngx_string("xss_check_status"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF
+          |NGX_CONF_FLAG|NGX_HTTP_LIF_CONF,
+      ngx_conf_set_flag_slot,
+      NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_xss_conf_t, check_status),
+      NULL },
+
+    { ngx_string("xss_override_status"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF
+          |NGX_CONF_FLAG|NGX_HTTP_LIF_CONF,
+      ngx_conf_set_flag_slot,
+      NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_xss_conf_t, override_status),
+      NULL },
+
     { ngx_string("xss_output_type"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF
           |NGX_CONF_1MORE|NGX_HTTP_LIF_CONF,
@@ -107,18 +123,29 @@ ngx_http_xss_header_filter(ngx_http_request_t *r)
     ngx_str_t                    callback;
     u_char                      *p, *src, *dst;
 
-    if (r->headers_out.status != NGX_HTTP_OK || r != r->main) {
-        /* TODO we should handle 201 here as well */
-
-        dd("skipped: status not 200 or in subrequest");
+    if (r != r->main) {
         return ngx_http_next_header_filter(r);
     }
 
     conf = ngx_http_get_module_loc_conf(r, ngx_http_xss_filter_module);
 
-    if ( ! conf->get_enabled || r->method != NGX_HTTP_GET) {
-        dd("skipped: get_enabled disabled or the current method is not GET");
+    if (! conf->get_enabled || r->method != NGX_HTTP_GET) {
+        ngx_log_error(NGX_LOG_INFO, r->connection->log, 0,
+                "xss skipped: get_enabled disabled or the "
+                "current method is not GET");
+
         return ngx_http_next_header_filter(r);
+    }
+
+    if (conf->check_status) {
+        if (r->headers_out.status != NGX_HTTP_OK &&
+            r->headers_out.status != NGX_HTTP_CREATED)
+        {
+            ngx_log_error(NGX_LOG_INFO, r->connection->log, 0,
+                    "xss skipped: status not 200 nor 201");
+
+            return ngx_http_next_header_filter(r);
+        }
     }
 
     if (conf->callback_arg.len == 0) {
@@ -129,16 +156,18 @@ ngx_http_xss_header_filter(ngx_http_request_t *r)
     }
 
     if (ngx_http_test_content_type(r, &conf->input_types) == NULL) {
-        dd("skipped: content type test not passed");
+        ngx_log_error(NGX_LOG_INFO, r->connection->log, 0,
+                "xss skipped: content type test not passed");
+
         return ngx_http_next_header_filter(r);
     }
 
     if (ngx_http_arg(r, conf->callback_arg.data, conf->callback_arg.len,
                 &callback) != NGX_OK)
     {
-        dd("skipped: no callback arg found in the current request: %.*s",
-                (int) conf->callback_arg.len,
-                conf->callback_arg.data);
+        ngx_log_error(NGX_LOG_INFO, r->connection->log, 0,
+                "xss skipped: no GET argument \"%V\" specified in the request",
+                &conf->callback_arg);
 
         return ngx_http_next_header_filter(r);
     }
@@ -200,6 +229,12 @@ ngx_http_xss_header_filter(ngx_http_request_t *r)
 
     ngx_http_clear_content_length(r);
     ngx_http_clear_accept_ranges(r);
+
+    if (conf->override_status &&
+            r->headers_out.status >= NGX_HTTP_SPECIAL_RESPONSE)
+    {
+        r->headers_out.status = NGX_HTTP_OK;
+    }
 
     return ngx_http_next_header_filter(r);
 }
@@ -330,6 +365,8 @@ ngx_http_xss_create_conf(ngx_conf_t *cf)
      */
 
     conf->get_enabled = NGX_CONF_UNSET;
+    conf->check_status = NGX_CONF_UNSET;
+    conf->override_status = NGX_CONF_UNSET;
 
     return conf;
 }
@@ -344,6 +381,10 @@ ngx_http_xss_merge_conf(ngx_conf_t *cf, void *parent, void *child)
     ngx_conf_merge_str_value(conf->callback_arg, prev->callback_arg, "");
 
     ngx_conf_merge_value(conf->get_enabled, prev->get_enabled, 0);
+
+    ngx_conf_merge_value(conf->check_status, prev->check_status, 1);
+
+    ngx_conf_merge_value(conf->override_status, prev->override_status, 1);
 
 #if defined(nginx_version) && nginx_version >= 8029
     if (ngx_http_merge_types(cf, &conf->input_types_keys, &conf->input_types,

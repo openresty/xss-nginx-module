@@ -27,14 +27,76 @@ Description
     (or "JSON with padding"). See <http://en.wikipedia.org/wiki/JSON#JSONP >
     for more details.
 
+Directives
+    * xss_get on | off
+        Syntax: xss_get on | off
+        Default: xss_get off
+        Context: main, http, location, if location
+
+        Enable JSONP support for GET requests.
+
+    * xss_callback_arg
+        Syntax: xss_callback_arg <name>
+        Default: none
+        Context: main, http, location, if location
+
+        Specify the JavaScript callback function name
+        used in the responses.
+
+        For example,
+
+            location /foo {
+                xss_get on;
+                xss_callback_arg c;
+                ...
+            }
+
+        then
+
+            GET /foo?c=blah
+
+        returns
+
+            blah(...);
+
+    * xss_override_status
+        Syntax: xss_override_status on | off
+        Default: xss_check_status on
+        Context: main, http, location, if location
+
+        Whether to override 30x, 40x and 50x status to 200
+        when the response is actually being processed.
+
+    * xss_check_status
+        Syntax: xss_check_status on | off
+        Default: xss_check_status on
+        Context: main, http, location, if location
+
+        By default, ngx_xss only process responses with the status code
+        200 or 201.
+
+    * xss_input_types
+        Syntax: xss_input_types [mime-type]...
+        Default: xss_input_types application/json
+        Context: main, http, location, if location
+
+        Only processes the responses of the specified MIME types.
+
+        Example:
+            xss_input_types application/json text/plain;
+
+Trouble Shooting
+    Use the "info" error log level (or lower) to get more
+    diagnostics when things go wrong.
+
 Installation
     Grab the nginx source code from nginx.net (<http://nginx.net/>), for
-    example, the version 0.8.53 (see nginx compatibility), and then build
+    example, the version 0.8.54 (see nginx compatibility), and then build
     the source with this module:
 
-        $ wget 'http://sysoev.ru/nginx/nginx-0.8.53.tar.gz'
-        $ tar -xzvf nginx-0.8.53.tar.gz
-        $ cd nginx-0.8.53/
+        $ wget 'http://sysoev.ru/nginx/nginx-0.8.54.tar.gz'
+        $ tar -xzvf nginx-0.8.54.tar.gz
+        $ cd nginx-0.8.54/
 
         # Here we assume you would install you nginx under /opt/nginx/.
         $ ./configure --prefix=/opt/nginx \
@@ -50,7 +112,7 @@ Installation
 Compatibility
     The following versions of Nginx should work with this module:
 
-    *   0.8.x (last tested: 0.8.53)
+    *   0.8.x (last tested: 0.8.54)
 
     *   0.7.x >= 0.7.30 (last tested: 0.7.67)
 

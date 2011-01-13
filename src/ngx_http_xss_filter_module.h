@@ -8,12 +8,15 @@
 
 typedef struct {
     ngx_str_t       callback_arg;
-    ngx_flag_t      get_enabled;
 
     ngx_hash_t      input_types;
     ngx_array_t    *input_types_keys;
 
     ngx_str_t       output_type;
+
+    ngx_flag_t      get_enabled;
+    ngx_flag_t      check_status;
+    ngx_flag_t      override_status;
 
 } ngx_http_xss_conf_t;
 

@@ -214,3 +214,49 @@ Content-Type: text/javascript
 blah({"errcode":400,"errstr":"Bad Request"}
 );
 
+
+
+=== TEST 12: check status and override status
+--- config
+    location /foo {
+        xss_get on;
+        xss_callback_arg c;
+        xss_check_status off;
+        default_type application/json;
+
+        content_by_lua '
+            ngx.status = 404
+            ngx.print("hello")
+        ';
+    }
+--- request
+    GET /foo?c=blah
+--- response_body chop
+blah(hello);
+--- error_code: 200
+--- response_headers
+Content-Type: application/x-javascript
+
+
+=== TEST 12: check status and NO override status
+--- config
+    location /foo {
+        xss_get on;
+        xss_callback_arg c;
+        xss_override_status off;
+        xss_check_status off;
+        default_type application/json;
+
+        content_by_lua '
+            ngx.status = 404
+            ngx.print("hello")
+        ';
+    }
+--- request
+    GET /foo?c=blah
+--- response_body chop
+blah(hello);
+--- error_code: 404
+--- response_headers
+Content-Type: application/x-javascript
+

@@ -37,8 +37,9 @@ fi
 if [[ "$BUILD_CLEAN" -eq 1 || ! -f Makefile || "$root/config" -nt Makefile || "$root/util/build.sh" -nt Makefile ]]; then
     ./configure --prefix=/opt/nginx \
           --add-module=$home/git/echo-nginx-module \
+          --add-module=$home/git/ndk-nginx-module \
+          --add-module=$home/git/lua-nginx-module \
           --add-module=$root $opts \
-          --add-module=$root/../ndk-nginx-module \
           --with-debug
           #--with-cc-opt="-g3 -O0"
           #--add-module=$root/../echo-nginx-module \
