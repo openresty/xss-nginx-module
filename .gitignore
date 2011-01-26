@@ -12,7 +12,7 @@ print.txt
 .rsync
 *.tar.gz
 dist
-build[78]
+build[789]
 build
 tags
 update-readme
@@ -49,3 +49,5 @@ src/module.c
 src/util.h
 src/util.c
 src/util.rl
+all.sh
+t/servroot/
