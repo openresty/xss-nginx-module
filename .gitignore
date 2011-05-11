@@ -21,7 +21,7 @@ update-readme
 test/Makefile
 test/blib
 test.sh
-t.sh
+go
 t/t.sh
 test/t/servroot/
 releng
