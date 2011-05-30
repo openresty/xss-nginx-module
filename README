@@ -85,6 +85,15 @@ Directives
         Example:
             xss_input_types application/json text/plain;
 
+Limitations
+    *   ngx_xss will not work with ngx_echo's subrequest interfaces, due to the underlying
+        limitations imposed by subrequests' "postponed chain" mechanism in the nginx core.
+        The standard ngx_addition module also falls into this category.  You're recommended,
+        however, to use ngx_lua as the content handler to issue subrequests *and* ngx_xss
+        to do JSONP, because ngx_lua's ngx.location.capture() interface does not utilize the
+        "postponed chain" mechanism, thus getting out of this limitation. We're taking this
+        approach in production and it works great.
+
 Trouble Shooting
     Use the "info" error log level (or lower) to get more
     diagnostics when things go wrong.
