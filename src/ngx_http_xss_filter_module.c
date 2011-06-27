@@ -247,7 +247,6 @@ ngx_http_xss_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
     ngx_chain_t               *cl, *orig_in;
     ngx_chain_t              **ll = NULL;
     ngx_http_xss_ctx_t        *ctx;
-    ngx_http_xss_conf_t       *conf;
     size_t                     len;
     ngx_buf_t                 *b;
 
@@ -260,8 +259,6 @@ ngx_http_xss_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
     if (ctx == NULL) {
         return ngx_http_next_body_filter(r, in);
     }
-
-    conf = ngx_http_get_module_loc_conf(r, ngx_http_xss_filter_module);
 
     orig_in = in;
 

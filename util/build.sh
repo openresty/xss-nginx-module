@@ -13,25 +13,35 @@ root=`pwd`
 cd ~/work
 version=$1
 home=~
+target=$root/work/nginx
 #opts=$2
 
+if [ ! -d ./buildroot ]; then
+    mkdir ./buildroot || exit 1
+fi
+
+cd buildroot || exit 1
+
 if [ ! -s "nginx-$version.tar.gz" ]; then
-    wget "http://sysoev.ru/nginx/nginx-$version.tar.gz" -O nginx-$version.tar.gz || exit 1
+    if [ -f ~/work/nginx-$version.tar.gz ]; then
+        cp ~/work/nginx-$version.tar.gz ./ || exit 1
+    else
+        wget "http://sysoev.ru/nginx/nginx-$version.tar.gz" -O nginx-$version.tar.gz || exit 1
+    fi
+
     tar -xzvf nginx-$version.tar.gz || exit 1
+    cp $root/../no-pool-nginx/nginx-$version-no_pool.patch ./ || exit 1
+    patch -p0 < nginx-$version-no_pool.patch || exit 1
 fi
 
-#tar -xzvf nginx-$version.tar.gz || exit 1
-#cp $root/../no-pool-nginx/nginx-$version-no_pool.patch ./
-#patch -p0 < nginx-$version-no_pool.patch
+#patch -p0 < ~/work/nginx-$version-rewrite_phase_fix.patch || exit 1
 
-if [ -n "$2" ]; then
-    cd nginx-$version-$2/
-else
-    cd nginx-$version/
-fi
+cd nginx-$version/ || exit 1
+
 
 if [[ "$BUILD_CLEAN" -eq 1 || ! -f Makefile || "$root/config" -nt Makefile || "$root/util/build.sh" -nt Makefile ]]; then
-    ./configure --prefix=/opt/nginx \
+    ./configure --prefix=$target \
+            --with-cc-opt="-O3" \
             --without-mail_pop3_module \
             --without-mail_imap_module \
             --without-mail_smtp_module \
@@ -52,11 +62,11 @@ if [[ "$BUILD_CLEAN" -eq 1 || ! -f Makefile || "$root/config" -nt Makefile || "$
   #--without-http_ssi_module  # we cannot disable ssi because echo_location_async depends on it (i dunno why?!)
 
 fi
-if [ -f /opt/nginx/sbin/nginx ]; then
-    rm -f /opt/nginx/sbin/nginx
+if [ -f $target/sbin/nginx ]; then
+    rm -f $target/sbin/nginx
 fi
-if [ -f /opt/nginx/logs/nginx.pid ]; then
-    kill `cat /opt/nginx/logs/nginx.pid`
+if [ -f $target/logs/nginx.pid ]; then
+    kill `cat $target/logs/nginx.pid`
 fi
 make -j3
 make install
