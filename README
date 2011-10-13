@@ -116,7 +116,7 @@ Installation
 
     Download the latest version of the release tarball of this module from
     xss-nginx-module file list
-    (<http://github.com/agentzh/xss-nginx-module/downloads>).
+    (<http://github.com/agentzh/xss-nginx-module/tags>).
 
 Compatibility
     The following versions of Nginx should work with this module:
