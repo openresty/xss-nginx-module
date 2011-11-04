@@ -40,8 +40,10 @@ st1:
 	if ( ++p == pe )
 		goto _test_eof1;
 case 1:
-	if ( (*p) == 36 )
-		goto st6;
+	switch( (*p) ) {
+		case 36: goto st6;
+		case 95: goto st6;
+	}
 	if ( (*p) > 90 ) {
 		if ( 97 <= (*p) && (*p) <= 122 )
 			goto st6;
@@ -128,7 +130,7 @@ case 5:
 
 
     if (cs < 
-#line 132 "src/ngx_http_xss_util.c"
+#line 134 "src/ngx_http_xss_util.c"
 6
 #line 29 "src/ngx_http_xss_util.rl"
  || p != pe) {

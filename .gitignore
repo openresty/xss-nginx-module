@@ -52,3 +52,4 @@ src/util.c
 src/util.rl
 all
 t/servroot/
+buildroot/

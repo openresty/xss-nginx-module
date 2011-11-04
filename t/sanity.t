@@ -261,3 +261,21 @@ blah(hello);
 --- response_headers
 Content-Type: application/x-javascript
 
+
+=== TEST 4: bug: keys started by underscore
+--- config
+    location /foo {
+        default_type 'application/json';
+        xss_get on;
+        xss_callback_arg _callback;
+        echo '[]';
+    }
+--- request
+GET /foo?_callback=foo._bar
+--- response_headers_like
+Content-Type: application/x-javascript
+--- response_body chop
+foo._bar([]
+);
+
+

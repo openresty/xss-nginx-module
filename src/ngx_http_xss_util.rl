@@ -13,7 +13,7 @@ ngx_int_t ngx_http_xss_test_callback(char *data, size_t len)
     int cs;
 
     %%{
-        identifier = [$A-Za-z] [$A-Za-z0-9_]*;
+        identifier = [$A-Za-z_] [$A-Za-z0-9_]*;
 
         index = [0-9]* '.' [0-9]+
               | [0-9]+
