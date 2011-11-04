@@ -398,7 +398,8 @@ ngx_http_xss_merge_conf(ngx_conf_t *cf, void *parent, void *child)
         return NGX_CONF_ERROR;
     }
 
-    ngx_conf_merge_str_value(conf->output_type, prev->output_type, ngx_http_xss_default_output_type);
+    ngx_conf_merge_str_value(conf->output_type, prev->output_type,
+            ngx_http_xss_default_output_type);
 
     return NGX_CONF_OK;
 }
