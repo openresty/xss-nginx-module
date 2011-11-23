@@ -290,9 +290,6 @@ foo._bar([]
         xss_callback_arg _c;
     }
     location /lua {
-        xss_get on;
-        xss_callback_arg _c;
-
         echo_exec /foo $args;
     }
 --- request
