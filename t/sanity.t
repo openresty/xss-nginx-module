@@ -262,7 +262,8 @@ blah(hello);
 Content-Type: application/x-javascript
 
 
-=== TEST 4: bug: keys started by underscore
+
+=== TEST 14: bug: keys started by underscore
 --- config
     location /foo {
         default_type 'application/json';
@@ -278,4 +279,26 @@ Content-Type: application/x-javascript
 foo._bar([]
 );
 
+
+
+=== TEST 15: exec
+--- config
+    location /foo {
+        default_type "application/json";
+        echo -n hello world;
+        xss_get on;
+        xss_callback_arg _c;
+    }
+    location /lua {
+        xss_get on;
+        xss_callback_arg _c;
+
+        echo_exec /foo $args;
+    }
+--- request
+    GET /lua?_c=bah
+--- response_headers
+Content-Type: application/x-javascript
+--- response_body chop
+bah(hello world);
 
