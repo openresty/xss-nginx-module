@@ -18,19 +18,21 @@ static const int javascript_en_main = 1;
 
 #line 8 "src/ngx_http_xss_util.rl"
 
-ngx_int_t ngx_http_xss_test_callback(char *data, size_t len)
+ngx_int_t ngx_http_xss_test_callback(u_char *data, size_t len)
 {
-    char *p = data;
-    char *pe = data + len;
+    signed char *p = (signed char *) data;
+    signed char *pe;
     int cs;
 
+    pe = p + len;
+
     
-#line 29 "src/ngx_http_xss_util.c"
+#line 31 "src/ngx_http_xss_util.c"
 	{
 	cs = javascript_start;
 	}
 
-#line 34 "src/ngx_http_xss_util.c"
+#line 36 "src/ngx_http_xss_util.c"
 	{
 	if ( p == pe )
 		goto _test_eof;
@@ -126,13 +128,13 @@ case 5:
 	_out: {}
 	}
 
-#line 27 "src/ngx_http_xss_util.rl"
+#line 29 "src/ngx_http_xss_util.rl"
 
 
     if (cs < 
-#line 134 "src/ngx_http_xss_util.c"
+#line 136 "src/ngx_http_xss_util.c"
 6
-#line 29 "src/ngx_http_xss_util.rl"
+#line 31 "src/ngx_http_xss_util.rl"
  || p != pe) {
         return NGX_DECLINED;
     }

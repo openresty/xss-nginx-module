@@ -192,7 +192,7 @@ ngx_http_xss_header_filter(ngx_http_request_t *r)
     callback.data = p;
     callback.len = dst - p;
 
-    if (ngx_http_xss_test_callback((char *) callback.data, callback.len)
+    if (ngx_http_xss_test_callback(callback.data, callback.len)
             != NGX_OK)
     {
         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,

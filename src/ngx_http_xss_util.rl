@@ -6,11 +6,13 @@
 %% machine javascript;
 %% write data;
 
-ngx_int_t ngx_http_xss_test_callback(char *data, size_t len)
+ngx_int_t ngx_http_xss_test_callback(u_char *data, size_t len)
 {
-    char *p = data;
-    char *pe = data + len;
+    signed char *p = (signed char *) data;
+    signed char *pe;
     int cs;
+
+    pe = p + len;
 
     %%{
         identifier = [$A-Za-z_] [$A-Za-z0-9_]*;

@@ -14,7 +14,7 @@ version=$1
 force=$2
 
 ngx-build $force $version \
-            --with-cc-opt="-O3" \
+            --with-cc-opt="-O3 -funsigned-char" \
             --without-mail_pop3_module \
             --without-mail_imap_module \
             --without-mail_smtp_module \
