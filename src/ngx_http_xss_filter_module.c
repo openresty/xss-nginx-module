@@ -124,31 +124,41 @@ ngx_http_xss_header_filter(ngx_http_request_t *r)
     u_char                      *p, *src, *dst;
 
     if (r != r->main) {
+        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                "xss skipped in subrequests");
+
         return ngx_http_next_header_filter(r);
     }
 
     conf = ngx_http_get_module_loc_conf(r, ngx_http_xss_filter_module);
 
-    if (! conf->get_enabled || r->method != NGX_HTTP_GET) {
-        ngx_log_error(NGX_LOG_INFO, r->connection->log, 0,
-                "xss skipped: get_enabled disabled or the "
-                "current method is not GET");
+    if (!conf->get_enabled) {
+        return ngx_http_next_header_filter(r);
+    }
+
+    if (r->method != NGX_HTTP_GET) {
+        ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                "xss skipped due to the unmatched request method: %V",
+                &r->method_name);
 
         return ngx_http_next_header_filter(r);
     }
 
     if (conf->check_status) {
-        if (r->headers_out.status != NGX_HTTP_OK &&
-            r->headers_out.status != NGX_HTTP_CREATED)
+
+        if (r->headers_out.status != NGX_HTTP_OK
+            && r->headers_out.status != NGX_HTTP_CREATED)
         {
-            ngx_log_error(NGX_LOG_INFO, r->connection->log, 0,
-                    "xss skipped: status not 200 nor 201");
+            ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                    "xss skipped due to unmatched response status \"%ui\"",
+                    r->headers_out.status);
 
             return ngx_http_next_header_filter(r);
         }
     }
 
     if (conf->callback_arg.len == 0) {
+
         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                 "xss: xss_get is enabled but no xss_callback_arg specified");
 
@@ -156,8 +166,9 @@ ngx_http_xss_header_filter(ngx_http_request_t *r)
     }
 
     if (ngx_http_test_content_type(r, &conf->input_types) == NULL) {
-        ngx_log_error(NGX_LOG_INFO, r->connection->log, 0,
-                "xss skipped: content type test not passed");
+
+        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                "xss skipped due to empty Content-Type response header");
 
         return ngx_http_next_header_filter(r);
     }
@@ -165,7 +176,7 @@ ngx_http_xss_header_filter(ngx_http_request_t *r)
     if (ngx_http_arg(r, conf->callback_arg.data, conf->callback_arg.len,
                 &callback) != NGX_OK)
     {
-        ngx_log_error(NGX_LOG_INFO, r->connection->log, 0,
+        ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                 "xss skipped: no GET argument \"%V\" specified in the request",
                 &conf->callback_arg);
 
@@ -223,15 +234,16 @@ ngx_http_xss_header_filter(ngx_http_request_t *r)
     r->headers_out.content_type_len = conf->output_type.len;
     r->headers_out.content_type_lowcase = NULL;
 
-    dd("output type: %.*s (%d)", (int) conf->output_type.len,
-            conf->output_type.data,
-            (int) conf->output_type.len);
+
+    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                "output Content-Type header \"%V\"",
+                &conf->output_type);
 
     ngx_http_clear_content_length(r);
     ngx_http_clear_accept_ranges(r);
 
-    if (conf->override_status &&
-            r->headers_out.status >= NGX_HTTP_SPECIAL_RESPONSE)
+    if (conf->override_status
+        && r->headers_out.status >= NGX_HTTP_SPECIAL_RESPONSE)
     {
         r->headers_out.status = NGX_HTTP_OK;
     }
