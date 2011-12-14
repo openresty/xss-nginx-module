@@ -168,7 +168,7 @@ ngx_http_xss_header_filter(ngx_http_request_t *r)
     if (ngx_http_test_content_type(r, &conf->input_types) == NULL) {
 
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                "xss skipped due to empty Content-Type response header");
+                "xss skipped due to unmatched Content-Type response header");
 
         return ngx_http_next_header_filter(r);
     }
@@ -228,15 +228,12 @@ ngx_http_xss_header_filter(ngx_http_request_t *r)
 
     ngx_http_set_ctx(r, ctx, ngx_http_xss_filter_module);
 
-    dd("Setting content type...");
-
     r->headers_out.content_type = conf->output_type;
     r->headers_out.content_type_len = conf->output_type.len;
     r->headers_out.content_type_lowcase = NULL;
 
-
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                "output Content-Type header \"%V\"",
+                "xss output Content-Type header \"%V\"",
                 &conf->output_type);
 
     ngx_http_clear_content_length(r);
