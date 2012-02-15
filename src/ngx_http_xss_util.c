@@ -1,14 +1,16 @@
 
 #line 1 "src/ngx_http_xss_util.rl"
+#ifndef DDEBUG
 #define DDEBUG 0
+#endif
 #include "ddebug.h"
 
 #include "ngx_http_xss_util.h"
 
 
-#line 7 "src/ngx_http_xss_util.rl"
+#line 9 "src/ngx_http_xss_util.rl"
 
-#line 12 "src/ngx_http_xss_util.c"
+#line 14 "src/ngx_http_xss_util.c"
 static const int javascript_start = 1;
 static const int javascript_first_final = 6;
 static const int javascript_error = 0;
@@ -16,7 +18,7 @@ static const int javascript_error = 0;
 static const int javascript_en_main = 1;
 
 
-#line 8 "src/ngx_http_xss_util.rl"
+#line 10 "src/ngx_http_xss_util.rl"
 
 ngx_int_t ngx_http_xss_test_callback(u_char *data, size_t len)
 {
@@ -27,12 +29,12 @@ ngx_int_t ngx_http_xss_test_callback(u_char *data, size_t len)
     pe = p + len;
 
     
-#line 31 "src/ngx_http_xss_util.c"
+#line 33 "src/ngx_http_xss_util.c"
 	{
 	cs = javascript_start;
 	}
 
-#line 36 "src/ngx_http_xss_util.c"
+#line 38 "src/ngx_http_xss_util.c"
 	{
 	if ( p == pe )
 		goto _test_eof;
@@ -128,13 +130,13 @@ case 5:
 	_out: {}
 	}
 
-#line 29 "src/ngx_http_xss_util.rl"
+#line 31 "src/ngx_http_xss_util.rl"
 
 
     if (cs < 
-#line 136 "src/ngx_http_xss_util.c"
+#line 138 "src/ngx_http_xss_util.c"
 6
-#line 31 "src/ngx_http_xss_util.rl"
+#line 33 "src/ngx_http_xss_util.rl"
  || p != pe) {
         return NGX_DECLINED;
     }

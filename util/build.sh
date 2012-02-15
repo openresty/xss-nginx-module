@@ -15,6 +15,7 @@ force=$2
 
 ngx-build $force $version \
             --with-cc-opt="-O3 -funsigned-char" \
+        --with-http_ssl_module \
             --without-mail_pop3_module \
             --without-mail_imap_module \
             --without-mail_smtp_module \
