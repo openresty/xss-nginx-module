@@ -3,11 +3,12 @@
 use lib 'lib';
 use Test::Nginx::Socket;
 
-repeat_each(1);
+repeat_each(2);
 
-plan tests => repeat_each() * 3 * blocks() + 1;
+plan tests => repeat_each() * (3 * blocks() + 1);
 
 #no_long_string();
+log_level 'warn';
 
 run_tests();
 
