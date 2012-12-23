@@ -14,7 +14,7 @@ version=$1
 force=$2
 
 ngx-build $force $version \
-            --with-cc-opt="-O3 -funsigned-char" \
+            --with-ld-opt="-L$PCRE_LIB -Wl,-rpath,$PCRE_LIB:$LIBDRIZZLE_LIB:$LUAJIT_LIB:/usr/local/lib" \
         --with-http_ssl_module \
             --without-mail_pop3_module \
             --without-mail_imap_module \
