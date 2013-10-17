@@ -1,3 +1,4 @@
+
 /*
  * Copyright (C) agentzh
  */
@@ -14,7 +15,9 @@
 #include <nginx.h>
 #include <ngx_config.h>
 
+
 #define ngx_http_xss_default_output_type "application/x-javascript"
+
 
 static ngx_str_t  ngx_http_xss_default_types[] = {
     ngx_string("application/json"),
@@ -127,7 +130,7 @@ ngx_http_xss_header_filter(ngx_http_request_t *r)
 
     if (r != r->main) {
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                "xss skipped in subrequests");
+                       "xss skipped in subrequests");
 
         return ngx_http_next_header_filter(r);
     }
@@ -140,8 +143,8 @@ ngx_http_xss_header_filter(ngx_http_request_t *r)
 
     if (r->method != NGX_HTTP_GET) {
         ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                "xss skipped due to the unmatched request method: %V",
-                &r->method_name);
+                       "xss skipped due to the unmatched request method: %V",
+                       &r->method_name);
 
         return ngx_http_next_header_filter(r);
     }
@@ -152,8 +155,8 @@ ngx_http_xss_header_filter(ngx_http_request_t *r)
             && r->headers_out.status != NGX_HTTP_CREATED)
         {
             ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                    "xss skipped due to unmatched response status \"%ui\"",
-                    r->headers_out.status);
+                           "xss skipped due to unmatched response status "
+                           "\"%ui\"", r->headers_out.status);
 
             return ngx_http_next_header_filter(r);
         }
@@ -162,7 +165,8 @@ ngx_http_xss_header_filter(ngx_http_request_t *r)
     if (conf->callback_arg.len == 0) {
 
         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                "xss: xss_get is enabled but no xss_callback_arg specified");
+                      "xss: xss_get is enabled but no xss_callback_arg "
+                      "specified");
 
         return ngx_http_next_header_filter(r);
     }
@@ -170,17 +174,19 @@ ngx_http_xss_header_filter(ngx_http_request_t *r)
     if (ngx_http_test_content_type(r, &conf->input_types) == NULL) {
 
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                "xss skipped due to unmatched Content-Type response header");
+                       "xss skipped due to unmatched Content-Type response "
+                       "header");
 
         return ngx_http_next_header_filter(r);
     }
 
     if (ngx_http_arg(r, conf->callback_arg.data, conf->callback_arg.len,
-                &callback) != NGX_OK)
+                     &callback)
+        != NGX_OK)
     {
         ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                "xss skipped: no GET argument \"%V\" specified in the request",
-                &conf->callback_arg);
+                       "xss skipped: no GET argument \"%V\" specified in "
+                       "the request", &conf->callback_arg);
 
         return ngx_http_next_header_filter(r);
     }
@@ -192,12 +198,11 @@ ngx_http_xss_header_filter(ngx_http_request_t *r)
 
     src = callback.data; dst = p;
 
-    ngx_unescape_uri(&dst, &src, callback.len,
-            NGX_UNESCAPE_URI_COMPONENT);
+    ngx_unescape_uri(&dst, &src, callback.len, NGX_UNESCAPE_URI_COMPONENT);
 
     if (src != callback.data + callback.len) {
         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                "xss: unescape uri: input data not consumed completely");
+                      "xss: unescape uri: input data not consumed completely");
 
         return NGX_ERROR;
     }
@@ -205,11 +210,9 @@ ngx_http_xss_header_filter(ngx_http_request_t *r)
     callback.data = p;
     callback.len = dst - p;
 
-    if (ngx_http_xss_test_callback(callback.data, callback.len)
-            != NGX_OK)
-    {
+    if (ngx_http_xss_test_callback(callback.data, callback.len) != NGX_OK) {
         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                "xss: bad callback argument: \"%V\"", &callback);
+                      "xss: bad callback argument: \"%V\"", &callback);
 
         return ngx_http_next_header_filter(r);
     }
@@ -235,8 +238,8 @@ ngx_http_xss_header_filter(ngx_http_request_t *r)
     r->headers_out.content_type_lowcase = NULL;
 
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                "xss output Content-Type header \"%V\"",
-                &conf->output_type);
+                   "xss output Content-Type header \"%V\"",
+                   &conf->output_type);
 
     ngx_http_clear_content_length(r);
     ngx_http_clear_accept_ranges(r);
@@ -277,7 +280,7 @@ ngx_http_xss_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
         ctx->before_body_sent = 1;
 
         dd("callback: %.*s", (int) ctx->callback.len,
-                ctx->callback.data);
+           ctx->callback.data);
 
         len = ctx->callback.len + sizeof("(") - 1;
 
@@ -396,13 +399,13 @@ ngx_http_xss_merge_conf(ngx_conf_t *cf, void *parent, void *child)
 
 #if defined(nginx_version) && nginx_version >= 8029
     if (ngx_http_merge_types(cf, &conf->input_types_keys, &conf->input_types,
-                 &prev->input_types_keys, &prev->input_types,
-                     ngx_http_xss_default_types)
+                             &prev->input_types_keys, &prev->input_types,
+                             ngx_http_xss_default_types)
         != NGX_OK)
 #else /* 0.7.x or 0.8.x < 0.8.29 */
     if (ngx_http_merge_types(cf, conf->input_types_keys, &conf->input_types,
-                 prev->input_types_keys, &prev->input_types,
-                     ngx_http_xss_default_types)
+                             prev->input_types_keys, &prev->input_types,
+                             ngx_http_xss_default_types)
         != NGX_OK)
 #endif
     {
@@ -410,8 +413,7 @@ ngx_http_xss_merge_conf(ngx_conf_t *cf, void *parent, void *child)
     }
 
     ngx_conf_merge_str_value(conf->output_type, prev->output_type,
-            ngx_http_xss_default_output_type);
+                             ngx_http_xss_default_output_type);
 
     return NGX_CONF_OK;
 }
-

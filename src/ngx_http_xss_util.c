@@ -1,5 +1,11 @@
 
 #line 1 "src/ngx_http_xss_util.rl"
+
+/*
+ * Copyright (C) agentzh
+ */
+
+
 #ifndef DDEBUG
 #define DDEBUG 0
 #endif
@@ -8,9 +14,10 @@
 #include "ngx_http_xss_util.h"
 
 
-#line 9 "src/ngx_http_xss_util.rl"
 
-#line 14 "src/ngx_http_xss_util.c"
+#line 16 "src/ngx_http_xss_util.rl"
+
+#line 21 "src/ngx_http_xss_util.c"
 static const int javascript_start = 1;
 static const int javascript_first_final = 6;
 static const int javascript_error = 0;
@@ -18,7 +25,7 @@ static const int javascript_error = 0;
 static const int javascript_en_main = 1;
 
 
-#line 10 "src/ngx_http_xss_util.rl"
+#line 17 "src/ngx_http_xss_util.rl"
 
 ngx_int_t ngx_http_xss_test_callback(u_char *data, size_t len)
 {
@@ -29,12 +36,12 @@ ngx_int_t ngx_http_xss_test_callback(u_char *data, size_t len)
     pe = p + len;
 
     
-#line 33 "src/ngx_http_xss_util.c"
+#line 40 "src/ngx_http_xss_util.c"
 	{
 	cs = javascript_start;
 	}
 
-#line 38 "src/ngx_http_xss_util.c"
+#line 45 "src/ngx_http_xss_util.c"
 	{
 	if ( p == pe )
 		goto _test_eof;
@@ -130,17 +137,16 @@ case 5:
 	_out: {}
 	}
 
-#line 31 "src/ngx_http_xss_util.rl"
+#line 38 "src/ngx_http_xss_util.rl"
 
 
     if (cs < 
-#line 138 "src/ngx_http_xss_util.c"
+#line 145 "src/ngx_http_xss_util.c"
 6
-#line 33 "src/ngx_http_xss_util.rl"
+#line 40 "src/ngx_http_xss_util.rl"
  || p != pe) {
         return NGX_DECLINED;
     }
 
     return NGX_OK;
 }
-

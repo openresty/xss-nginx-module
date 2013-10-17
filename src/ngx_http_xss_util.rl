@@ -1,9 +1,16 @@
+
+/*
+ * Copyright (C) agentzh
+ */
+
+
 #ifndef DDEBUG
 #define DDEBUG 0
 #endif
 #include "ddebug.h"
 
 #include "ngx_http_xss_util.h"
+
 
 %% machine javascript;
 %% write data;
@@ -36,4 +43,3 @@ ngx_int_t ngx_http_xss_test_callback(u_char *data, size_t len)
 
     return NGX_OK;
 }
-
