@@ -14,7 +14,7 @@ print.txt
 dist
 build[789]
 build
-build10
+build1[0-9]
 tags
 update-readme
 *.tmp
@@ -54,3 +54,5 @@ all
 t/servroot/
 buildroot/
 build12
+*.plist
+Makefile
