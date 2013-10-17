@@ -95,8 +95,8 @@ static ngx_http_module_t  ngx_http_xss_filter_module_ctx = {
     NULL,                                  /* create server configuration */
     NULL,                                  /* merge server configuration */
 
-    ngx_http_xss_create_conf,         /* create location configuration */
-    ngx_http_xss_merge_conf           /* merge location configuration */
+    ngx_http_xss_create_conf,              /* create location configuration */
+    ngx_http_xss_merge_conf                /* merge location configuration */
 };
 
 
