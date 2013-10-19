@@ -25,10 +25,16 @@ static ngx_str_t  ngx_http_xss_default_types[] = {
 };
 
 
-static void *ngx_http_xss_create_conf(ngx_conf_t *cf);
-static char *ngx_http_xss_merge_conf(ngx_conf_t *cf, void *parent,
+static void *ngx_http_xss_create_loc_conf(ngx_conf_t *cf);
+static char *ngx_http_xss_merge_loc_conf(ngx_conf_t *cf, void *parent,
     void *child);
 static ngx_int_t ngx_http_xss_filter_init(ngx_conf_t *cf);
+static void * ngx_http_xss_create_main_conf(ngx_conf_t *cf);
+static char * ngx_http_xss_get(ngx_conf_t *cf, ngx_command_t *cmd,
+    void *conf);
+
+
+static volatile ngx_cycle_t  *ngx_http_xss_prev_cycle = NULL;
 
 
 static ngx_command_t  ngx_http_xss_commands[] = {
@@ -36,9 +42,9 @@ static ngx_command_t  ngx_http_xss_commands[] = {
     { ngx_string("xss_get"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF
           |NGX_HTTP_LIF_CONF|NGX_CONF_FLAG,
-      ngx_conf_set_flag_slot,
+      ngx_http_xss_get,
       NGX_HTTP_LOC_CONF_OFFSET,
-      offsetof(ngx_http_xss_conf_t, get_enabled),
+      offsetof(ngx_http_xss_loc_conf_t, get_enabled),
       NULL },
 
     { ngx_string("xss_callback_arg"),
@@ -46,7 +52,7 @@ static ngx_command_t  ngx_http_xss_commands[] = {
           |NGX_HTTP_LIF_CONF|NGX_CONF_TAKE1,
       ngx_conf_set_str_slot,
       NGX_HTTP_LOC_CONF_OFFSET,
-      offsetof(ngx_http_xss_conf_t, callback_arg),
+      offsetof(ngx_http_xss_loc_conf_t, callback_arg),
       NULL },
 
     { ngx_string("xss_input_types"),
@@ -54,7 +60,7 @@ static ngx_command_t  ngx_http_xss_commands[] = {
           |NGX_CONF_1MORE|NGX_HTTP_LIF_CONF,
       ngx_http_types_slot,
       NGX_HTTP_LOC_CONF_OFFSET,
-      offsetof(ngx_http_xss_conf_t, input_types_keys),
+      offsetof(ngx_http_xss_loc_conf_t, input_types_keys),
       &ngx_http_xss_default_types[0] },
 
     { ngx_string("xss_check_status"),
@@ -62,7 +68,7 @@ static ngx_command_t  ngx_http_xss_commands[] = {
           |NGX_CONF_FLAG|NGX_HTTP_LIF_CONF,
       ngx_conf_set_flag_slot,
       NGX_HTTP_LOC_CONF_OFFSET,
-      offsetof(ngx_http_xss_conf_t, check_status),
+      offsetof(ngx_http_xss_loc_conf_t, check_status),
       NULL },
 
     { ngx_string("xss_override_status"),
@@ -70,7 +76,7 @@ static ngx_command_t  ngx_http_xss_commands[] = {
           |NGX_CONF_FLAG|NGX_HTTP_LIF_CONF,
       ngx_conf_set_flag_slot,
       NGX_HTTP_LOC_CONF_OFFSET,
-      offsetof(ngx_http_xss_conf_t, override_status),
+      offsetof(ngx_http_xss_loc_conf_t, override_status),
       NULL },
 
     { ngx_string("xss_output_type"),
@@ -78,7 +84,7 @@ static ngx_command_t  ngx_http_xss_commands[] = {
           |NGX_CONF_1MORE|NGX_HTTP_LIF_CONF,
       ngx_conf_set_str_slot,
       NGX_HTTP_LOC_CONF_OFFSET,
-      offsetof(ngx_http_xss_conf_t, output_type),
+      offsetof(ngx_http_xss_loc_conf_t, output_type),
       NULL },
 
       ngx_null_command
@@ -89,14 +95,14 @@ static ngx_http_module_t  ngx_http_xss_filter_module_ctx = {
     NULL,                                  /* preconfiguration */
     ngx_http_xss_filter_init,              /* postconfiguration */
 
-    NULL,                                  /* create main configuration */
+    ngx_http_xss_create_main_conf,         /* create main configuration */
     NULL,                                  /* init main configuration */
 
     NULL,                                  /* create server configuration */
     NULL,                                  /* merge server configuration */
 
-    ngx_http_xss_create_conf,              /* create location configuration */
-    ngx_http_xss_merge_conf                /* merge location configuration */
+    ngx_http_xss_create_loc_conf,          /* create location configuration */
+    ngx_http_xss_merge_loc_conf            /* merge location configuration */
 };
 
 
@@ -124,7 +130,7 @@ static ngx_int_t
 ngx_http_xss_header_filter(ngx_http_request_t *r)
 {
     ngx_http_xss_ctx_t          *ctx;
-    ngx_http_xss_conf_t         *conf;
+    ngx_http_xss_loc_conf_t     *xlcf;
     ngx_str_t                    callback;
     u_char                      *p, *src, *dst;
 
@@ -135,9 +141,9 @@ ngx_http_xss_header_filter(ngx_http_request_t *r)
         return ngx_http_next_header_filter(r);
     }
 
-    conf = ngx_http_get_module_loc_conf(r, ngx_http_xss_filter_module);
+    xlcf = ngx_http_get_module_loc_conf(r, ngx_http_xss_filter_module);
 
-    if (!conf->get_enabled) {
+    if (!xlcf->get_enabled) {
         return ngx_http_next_header_filter(r);
     }
 
@@ -149,7 +155,7 @@ ngx_http_xss_header_filter(ngx_http_request_t *r)
         return ngx_http_next_header_filter(r);
     }
 
-    if (conf->check_status) {
+    if (xlcf->check_status) {
 
         if (r->headers_out.status != NGX_HTTP_OK
             && r->headers_out.status != NGX_HTTP_CREATED)
@@ -162,7 +168,7 @@ ngx_http_xss_header_filter(ngx_http_request_t *r)
         }
     }
 
-    if (conf->callback_arg.len == 0) {
+    if (xlcf->callback_arg.len == 0) {
 
         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                       "xss: xss_get is enabled but no xss_callback_arg "
@@ -171,7 +177,7 @@ ngx_http_xss_header_filter(ngx_http_request_t *r)
         return ngx_http_next_header_filter(r);
     }
 
-    if (ngx_http_test_content_type(r, &conf->input_types) == NULL) {
+    if (ngx_http_test_content_type(r, &xlcf->input_types) == NULL) {
 
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "xss skipped due to unmatched Content-Type response "
@@ -180,13 +186,13 @@ ngx_http_xss_header_filter(ngx_http_request_t *r)
         return ngx_http_next_header_filter(r);
     }
 
-    if (ngx_http_arg(r, conf->callback_arg.data, conf->callback_arg.len,
+    if (ngx_http_arg(r, xlcf->callback_arg.data, xlcf->callback_arg.len,
                      &callback)
         != NGX_OK)
     {
         ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "xss skipped: no GET argument \"%V\" specified in "
-                       "the request", &conf->callback_arg);
+                       "the request", &xlcf->callback_arg);
 
         return ngx_http_next_header_filter(r);
     }
@@ -226,25 +232,25 @@ ngx_http_xss_header_filter(ngx_http_request_t *r)
      * set by ngx_pcalloc():
      *
      *     ctx->callback = { 0, NULL };
-     *     conf->before_body_sent = 0;
+     *     ctx->before_body_sent = 0;
      */
 
     ctx->callback = callback;
 
     ngx_http_set_ctx(r, ctx, ngx_http_xss_filter_module);
 
-    r->headers_out.content_type = conf->output_type;
-    r->headers_out.content_type_len = conf->output_type.len;
+    r->headers_out.content_type = xlcf->output_type;
+    r->headers_out.content_type_len = xlcf->output_type.len;
     r->headers_out.content_type_lowcase = NULL;
 
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "xss output Content-Type header \"%V\"",
-                   &conf->output_type);
+                   &xlcf->output_type);
 
     ngx_http_clear_content_length(r);
     ngx_http_clear_accept_ranges(r);
 
-    if (conf->override_status
+    if (xlcf->override_status
         && r->headers_out.status >= NGX_HTTP_SPECIAL_RESPONSE)
     {
         r->headers_out.status = NGX_HTTP_OK;
@@ -346,22 +352,37 @@ ngx_http_xss_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
 static ngx_int_t
 ngx_http_xss_filter_init(ngx_conf_t *cf)
 {
-    ngx_http_next_header_filter = ngx_http_top_header_filter;
-    ngx_http_top_header_filter = ngx_http_xss_header_filter;
+    int                             multi_http_blocks;
+    ngx_http_xss_main_conf_t       *xmcf;
 
-    ngx_http_next_body_filter = ngx_http_top_body_filter;
-    ngx_http_top_body_filter = ngx_http_xss_body_filter;
+    xmcf = ngx_http_conf_get_module_main_conf(cf, ngx_http_xss_filter_module);
+
+    if (ngx_http_xss_prev_cycle != ngx_cycle) {
+        ngx_http_xss_prev_cycle = ngx_cycle;
+        multi_http_blocks = 0;
+
+    } else {
+        multi_http_blocks = 1;
+    }
+
+    if (multi_http_blocks || xmcf->requires_filter) {
+        ngx_http_next_header_filter = ngx_http_top_header_filter;
+        ngx_http_top_header_filter = ngx_http_xss_header_filter;
+
+        ngx_http_next_body_filter = ngx_http_top_body_filter;
+        ngx_http_top_body_filter = ngx_http_xss_body_filter;
+    }
 
     return NGX_OK;
 }
 
 
 static void *
-ngx_http_xss_create_conf(ngx_conf_t *cf)
+ngx_http_xss_create_loc_conf(ngx_conf_t *cf)
 {
-    ngx_http_xss_conf_t  *conf;
+    ngx_http_xss_loc_conf_t  *conf;
 
-    conf = ngx_pcalloc(cf->pool, sizeof(ngx_http_xss_conf_t));
+    conf = ngx_pcalloc(cf->pool, sizeof(ngx_http_xss_loc_conf_t));
     if (conf == NULL) {
         return NULL;
     }
@@ -384,10 +405,10 @@ ngx_http_xss_create_conf(ngx_conf_t *cf)
 
 
 static char *
-ngx_http_xss_merge_conf(ngx_conf_t *cf, void *parent, void *child)
+ngx_http_xss_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
 {
-    ngx_http_xss_conf_t *prev = parent;
-    ngx_http_xss_conf_t *conf = child;
+    ngx_http_xss_loc_conf_t *prev = parent;
+    ngx_http_xss_loc_conf_t *conf = child;
 
     ngx_conf_merge_str_value(conf->callback_arg, prev->callback_arg, "");
 
@@ -416,4 +437,36 @@ ngx_http_xss_merge_conf(ngx_conf_t *cf, void *parent, void *child)
                              ngx_http_xss_default_output_type);
 
     return NGX_CONF_OK;
+}
+
+
+static void *
+ngx_http_xss_create_main_conf(ngx_conf_t *cf)
+{
+    ngx_http_xss_main_conf_t    *conf;
+
+    conf = ngx_pcalloc(cf->pool, sizeof(ngx_http_xss_main_conf_t));
+    if (conf == NULL) {
+        return NULL;
+    }
+
+    /* set by ngx_pcalloc:
+     *      conf->requires_filter = 0;
+     */
+
+    return conf;
+}
+
+
+static char *
+ngx_http_xss_get(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
+{
+    ngx_http_xss_main_conf_t       *xmcf;
+
+    xmcf = ngx_http_conf_get_module_main_conf(cf,
+                                              ngx_http_xss_filter_module);
+
+    xmcf->requires_filter = 1;
+
+    return ngx_conf_set_flag_slot(cf, cmd, conf);
 }

@@ -18,7 +18,13 @@ typedef struct {
     ngx_flag_t      check_status;
     ngx_flag_t      override_status;
 
-} ngx_http_xss_conf_t;
+} ngx_http_xss_loc_conf_t;
+
+
+typedef struct {
+    ngx_int_t       requires_filter;
+
+} ngx_http_xss_main_conf_t;
 
 
 typedef struct {
