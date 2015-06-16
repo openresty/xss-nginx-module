@@ -8,6 +8,8 @@ if [ $? != 0 ]; then
     exit 1;
 fi
 
+./util/fix-clang-warnings || exit 1
+
 root=`pwd`
 home=~
 version=$1

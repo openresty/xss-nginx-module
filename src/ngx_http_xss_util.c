@@ -19,10 +19,7 @@
 
 #line 21 "src/ngx_http_xss_util.c"
 static const int javascript_start = 1;
-static const int javascript_first_final = 6;
-static const int javascript_error = 0;
 
-static const int javascript_en_main = 1;
 
 
 #line 17 "src/ngx_http_xss_util.rl"
@@ -140,11 +137,7 @@ case 5:
 #line 38 "src/ngx_http_xss_util.rl"
 
 
-    if (cs < 
-#line 145 "src/ngx_http_xss_util.c"
-6
-#line 40 "src/ngx_http_xss_util.rl"
- || p != pe) {
+    if (cs < 6 || p != pe) {
         return NGX_DECLINED;
     }
 
