@@ -73,6 +73,9 @@ hello
 
 
 === TEST 3: used (multiple http {} blocks)
+This test case won't run with nginx 1.9.3+ since duplicate http {} blocks
+have been prohibited since then.
+--- SKIP
 --- config
     location = /t {
         default_type application/json;
