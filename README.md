@@ -178,18 +178,18 @@ diagnostics when things go wrong.
 Installation
 ============
 
-You're recommended to install this module (as well as the Nginx core and many other goodies) via the [ngx_openresty bundle](http://openresty.org). See [the detailed instructions](http://openresty.org/#Installation) for downloading and installing ngx_openresty into your system. This is the easiest and most safe way to set things up.
+You're recommended to install this module (as well as the Nginx core and many other goodies) via the [OpenResty bundle](http://openresty.org). See [the detailed instructions](http://openresty.org/#Installation) for downloading and installing OpenResty into your system. This is the easiest and most safe way to set things up.
 
 Alternatively, you can install this module manually with the Nginx source:
 
 Grab the nginx source code from [nginx.org](http://nginx.org/), for example,
-the version 1.7.10 (see [nginx compatibility](#compatibility)), and then build the source with this module:
+the version 1.9.7 (see [nginx compatibility](#compatibility)), and then build the source with this module:
 
 ```bash
 
- $ wget 'http://nginx.org/download/nginx-1.7.10.tar.gz'
- $ tar -xzvf nginx-1.7.10.tar.gz
- $ cd nginx-1.7.10/
+ $ wget 'http://nginx.org/download/nginx-1.9.7.tar.gz'
+ $ tar -xzvf nginx-1.9.7.tar.gz
+ $ cd nginx-1.9.7/
 
  # Here we assume you would install you nginx under /opt/nginx/.
  $ ./configure --prefix=/opt/nginx \
@@ -201,7 +201,7 @@ the version 1.7.10 (see [nginx compatibility](#compatibility)), and then build t
 
 Download the latest version of the release tarball of this module from [xss-nginx-module file list](https://github.com/openresty/xss-nginx-module/tags).
 
-Also, this module is included and enabled by default in the [ngx_openresty bundle](http://openresty.org).
+Also, this module is included and enabled by default in the [OpenResty bundle](http://openresty.org).
 
 [Back to TOC](#table-of-contents)
 
@@ -210,6 +210,8 @@ Compatibility
 
 The following versions of Nginx should work with this module:
 
+* **1.9.x** (last tested: 1.9.7)
+* **1.8.x**
 * **1.7.x** (last tested: 1.7.10)
 * **1.6.x**
 * **1.5.x**
@@ -250,7 +252,7 @@ This part of code is copyrighted by Maxim Dounin.
 
 This module is licenced under the BSD license.
 
-Copyright (C) 2009-2015 by Yichun "agentzh" Zhang (章亦春) &lt;agentzh@gmail.com&gt;.
+Copyright (C) 2009-2016 by Yichun "agentzh" Zhang (章亦春) &lt;agentzh@gmail.com&gt;.
 
 All rights reserved.
 
