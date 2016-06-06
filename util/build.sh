@@ -11,7 +11,6 @@ fi
 ./util/fix-clang-warnings || exit 1
 
 root=`pwd`
-home=~
 version=$1
 force=$2
 
@@ -28,9 +27,9 @@ ngx-build $force $version \
             --without-http_autoindex_module \
             --without-http_auth_basic_module \
             --without-http_userid_module \
-          --add-module=$home/git/echo-nginx-module \
-          --add-module=$home/git/ndk-nginx-module \
-          --add-module=$home/git/lua-nginx-module \
+          --add-module=../echo-nginx-module \
+          --add-module=../ndk-nginx-module \
+          --add-module=../lua-nginx-module \
           --add-module=$root $opts \
           --with-debug
           #--with-cc-opt="-g3 -O0"
