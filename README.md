@@ -252,7 +252,7 @@ This part of code is copyrighted by Maxim Dounin.
 
 This module is licenced under the BSD license.
 
-Copyright (C) 2009-2016 by Yichun "agentzh" Zhang (章亦春) &lt;agentzh@gmail.com&gt;.
+Copyright (C) 2009-2017 by Yichun "agentzh" Zhang (章亦春) &lt;agentzh@gmail.com&gt; OpenResty Inc.
 
 All rights reserved.
 
