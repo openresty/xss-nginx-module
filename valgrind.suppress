@@ -1,15 +1,9 @@
 {
-<insert_a_suppression_name_here>
-Memcheck:Leak
-fun:malloc
-fun:ngx_alloc
-}
-{
-<insert_a_suppression_name_here>
-Memcheck:Addr4
-fun:ngx_init_cycle
-fun:ngx_master_process_cycle
-fun:main
+   <insert_a_suppression_name_here>
+   Memcheck:Addr4
+   fun:ngx_init_cycle
+   fun:ngx_master_process_cycle
+   fun:main
 }
 {
    <insert_a_suppression_name_here>
@@ -17,13 +11,6 @@ fun:main
    fun:malloc
    fun:ngx_calloc
    fun:ngx_event_process_init
-}
-{
-   <insert_a_suppression_name_here>
-   Memcheck:Addr4
-   fun:lj_str_new
-   fun:lua_setfield
-   fun:ngx_http_lua_cache_store_code
 }
 {
    <insert_a_suppression_name_here>
