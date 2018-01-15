@@ -18,6 +18,36 @@
 #line 16 "src/ngx_http_xss_util.rl"
 
 #line 21 "src/ngx_http_xss_util.c"
+static const char _javascript_key_offsets[] = {
+	0, 0, 6, 9, 11, 14, 18, 28
+};
+
+static const char _javascript_trans_keys[] = {
+	36, 95, 65, 90, 97, 122, 46, 48, 
+	57, 48, 57, 93, 48, 57, 46, 93, 
+	48, 57, 36, 46, 91, 95, 48, 57, 
+	65, 90, 97, 122, 0
+};
+
+static const char _javascript_single_lengths[] = {
+	0, 2, 1, 0, 1, 2, 4, 0
+};
+
+static const char _javascript_range_lengths[] = {
+	0, 2, 1, 1, 1, 1, 3, 0
+};
+
+static const char _javascript_index_offsets[] = {
+	0, 0, 5, 8, 10, 13, 17, 25
+};
+
+static const char _javascript_trans_targs[] = {
+	6, 6, 6, 6, 0, 3, 5, 0, 
+	4, 0, 7, 4, 0, 3, 7, 5, 
+	0, 6, 1, 2, 6, 6, 6, 6, 
+	0, 0, 0
+};
+
 static const int javascript_start = 1;
 
 
@@ -33,103 +63,77 @@ ngx_int_t ngx_http_xss_test_callback(u_char *data, size_t len)
     pe = p + len;
 
     
-#line 40 "src/ngx_http_xss_util.c"
+#line 70 "src/ngx_http_xss_util.c"
 	{
 	cs = javascript_start;
 	}
 
-#line 45 "src/ngx_http_xss_util.c"
+#line 75 "src/ngx_http_xss_util.c"
 	{
+	int _klen;
+	const char *_keys;
+	int _trans;
+
 	if ( p == pe )
 		goto _test_eof;
-	switch ( cs )
-	{
-st1:
-	if ( ++p == pe )
-		goto _test_eof1;
-case 1:
-	switch( (*p) ) {
-		case 36: goto st6;
-		case 95: goto st6;
-	}
-	if ( (*p) > 90 ) {
-		if ( 97 <= (*p) && (*p) <= 122 )
-			goto st6;
-	} else if ( (*p) >= 65 )
-		goto st6;
-	goto st0;
-st0:
-cs = 0;
-	goto _out;
-st6:
-	if ( ++p == pe )
-		goto _test_eof6;
-case 6:
-	switch( (*p) ) {
-		case 36: goto st6;
-		case 46: goto st1;
-		case 91: goto st2;
-		case 95: goto st6;
-	}
-	if ( (*p) < 65 ) {
-		if ( 48 <= (*p) && (*p) <= 57 )
-			goto st6;
-	} else if ( (*p) > 90 ) {
-		if ( 97 <= (*p) && (*p) <= 122 )
-			goto st6;
-	} else
-		goto st6;
-	goto st0;
-st2:
-	if ( ++p == pe )
-		goto _test_eof2;
-case 2:
-	if ( (*p) == 46 )
-		goto st3;
-	if ( 48 <= (*p) && (*p) <= 57 )
-		goto st5;
-	goto st0;
-st3:
-	if ( ++p == pe )
-		goto _test_eof3;
-case 3:
-	if ( 48 <= (*p) && (*p) <= 57 )
-		goto st4;
-	goto st0;
-st4:
-	if ( ++p == pe )
-		goto _test_eof4;
-case 4:
-	if ( (*p) == 93 )
-		goto st7;
-	if ( 48 <= (*p) && (*p) <= 57 )
-		goto st4;
-	goto st0;
-st7:
-	if ( ++p == pe )
-		goto _test_eof7;
-case 7:
-	goto st0;
-st5:
-	if ( ++p == pe )
-		goto _test_eof5;
-case 5:
-	switch( (*p) ) {
-		case 46: goto st3;
-		case 93: goto st7;
-	}
-	if ( 48 <= (*p) && (*p) <= 57 )
-		goto st5;
-	goto st0;
-	}
-	_test_eof1: cs = 1; goto _test_eof; 
-	_test_eof6: cs = 6; goto _test_eof; 
-	_test_eof2: cs = 2; goto _test_eof; 
-	_test_eof3: cs = 3; goto _test_eof; 
-	_test_eof4: cs = 4; goto _test_eof; 
-	_test_eof7: cs = 7; goto _test_eof; 
-	_test_eof5: cs = 5; goto _test_eof; 
+	if ( cs == 0 )
+		goto _out;
+_resume:
+	_keys = _javascript_trans_keys + _javascript_key_offsets[cs];
+	_trans = _javascript_index_offsets[cs];
 
+	_klen = _javascript_single_lengths[cs];
+	if ( _klen > 0 ) {
+		const char *_lower = _keys;
+		const char *_mid;
+		const char *_upper = _keys + _klen - 1;
+		while (1) {
+			if ( _upper < _lower )
+				break;
+
+			_mid = _lower + ((_upper-_lower) >> 1);
+			if ( (*p) < *_mid )
+				_upper = _mid - 1;
+			else if ( (*p) > *_mid )
+				_lower = _mid + 1;
+			else {
+				_trans += (unsigned int)(_mid - _keys);
+				goto _match;
+			}
+		}
+		_keys += _klen;
+		_trans += _klen;
+	}
+
+	_klen = _javascript_range_lengths[cs];
+	if ( _klen > 0 ) {
+		const char *_lower = _keys;
+		const char *_mid;
+		const char *_upper = _keys + (_klen<<1) - 2;
+		while (1) {
+			if ( _upper < _lower )
+				break;
+
+			_mid = _lower + (((_upper-_lower) >> 1) & ~1);
+			if ( (*p) < _mid[0] )
+				_upper = _mid - 2;
+			else if ( (*p) > _mid[1] )
+				_lower = _mid + 2;
+			else {
+				_trans += (unsigned int)((_mid - _keys)>>1);
+				goto _match;
+			}
+		}
+		_trans += _klen;
+	}
+
+_match:
+	cs = _javascript_trans_targs[_trans];
+
+	if ( cs == 0 )
+		goto _out;
+	if ( ++p != pe )
+		goto _resume;
 	_test_eof: {}
 	_out: {}
 	}

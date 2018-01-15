@@ -2,7 +2,7 @@
 
 # this file is mostly meant to be used by the author himself.
 
-ragel -G2 src/ngx_http_xss_util.rl
+ragel -T1 src/ngx_http_xss_util.rl || exit 1
 if [ $? != 0 ]; then
     echo 'Failed to generate the ngx_http_xss_util.c.' 1>&2
     exit 1;
@@ -16,7 +16,7 @@ force=$2
 
 ngx-build $force $version \
             --with-cc-opt="-I$PCRE_INC -I$OPENSSL_INC" \
-            --with-ld-opt="-L$PCRE_LIB -L$OPENSSL_LIB -Wl,-rpath,$PCRE_LIB:$LIBDRIZZLE_LIB:$OPENSSL_LIB" \
+            --with-ld-opt="-L$PCRE_LIB -L$OPENSSL_LIB -Wl,-rpath,$PCRE_LIB:$OPENSSL_LIB" \
         --with-http_ssl_module \
             --without-mail_pop3_module \
             --without-mail_imap_module \
