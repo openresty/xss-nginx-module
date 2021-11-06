@@ -37,7 +37,7 @@ env:
 
 install:
   - if [ ! -d download-cache ]; then mkdir download-cache; fi
-  - if [ ! -f download-cache/pcre-$PCRE_VER.tar.gz ]; then wget -P download-cache https://ftp.pcre.org/pub/pcre/pcre-$PCRE_VER.tar.gz; fi
+  - if [ ! -f download-cache/pcre-$PCRE_VER.tar.gz ]; then wget -P download-cache https://downloads.sourceforge.net/project/pcre/pcre/${PCRE_VER}/pcre-${PCRE_VER}.tar.gz; fi
   - if [ ! -f download-cache/openssl-$OPENSSL_VER.tar.gz ]; then wget -O download-cache/openssl-$OPENSSL_VER.tar.gz https://www.openssl.org/source/openssl-$OPENSSL_VER.tar.gz; fi
   - git clone https://github.com/openresty/nginx-devel-utils.git
   - git clone https://github.com/openresty/openresty.git ../openresty
