@@ -1,5 +1,9 @@
 sudo: required
-dist: bionic
+dist: focal
+
+branches:
+  only:
+    - "master"
 
 os: linux
 
@@ -32,8 +36,7 @@ env:
     - NGX_BUILD_JOBS=$JOBS
     - TEST_NGINX_SLEEP=0.006
   matrix:
-    - NGINX_VERSION=1.17.8 OPENSSL_VER=1.1.0l
-    - NGINX_VERSION=1.19.9 OPENSSL_VER=1.1.1k
+    - NGINX_VERSION=1.25.3 OPENSSL_VER=1.1.1u
 
 install:
   - if [ ! -d download-cache ]; then mkdir download-cache; fi
