@@ -193,7 +193,9 @@ the version 1.13.6 (see [nginx compatibility](#compatibility)), and then build t
 
  # Here we assume you would install you nginx under /opt/nginx/.
  $ ./configure --prefix=/opt/nginx \
-     --add-module=/path/to/rds-json-nginx-module
+     --add-module=/path/to/xss-nginx-module
+ # Or
+     --add-dynamic-module=../xss-nginx-module
 
  $ make -j2
  $ make install
