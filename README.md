@@ -50,7 +50,7 @@ Description
 This module adds cross-site AJAX support to nginx. Currently only
 cross-site GET is supported. But cross-site POST will be added
 in the future.
-
+AJAX was used by samy kamkar to attack on myspace
 The cross-site GET is currently implemented as JSONP
 (or "JSON with padding"). See http://en.wikipedia.org/wiki/JSON#JSONP
 for more details.
