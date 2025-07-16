@@ -1,20 +1,23 @@
 ngx_addon_name=ngx_http_xss_filter_module
 
-HTTP_AUX_FILTER_MODULES="$HTTP_AUX_FILTER_MODULES ngx_http_xss_filter_module"
-NGX_ADDON_SRCS="$NGX_ADDON_SRCS $ngx_addon_dir/src/ngx_http_xss_filter_module.c $ngx_addon_dir/src/ngx_http_xss_util.c"
-NGX_ADDON_DEPS="$NGX_ADDON_DEPS $ngx_addon_dir/src/ddebug.h $ngx_addon_dir/src/ngx_http_xss_filter_module.h $ngx_addon_dir/src/ngx_http_xss_util.h"
-
+# add dynamic module supported for NGINX v1.9.11
+STUB_TYPE=HTTP_AUX_FILTER
+STUB_DEPS="$ngx_addon_dir/src/ddebug.h $ngx_addon_dir/src/ngx_http_xss_filter_module.h $ngx_addon_dir/src/ngx_http_xss_util.h"
+STUB_SRCS="$ngx_addon_dir/src/ngx_http_xss_filter_module.c $ngx_addon_dir/src/ngx_http_xss_util.c"
+STUB_INCS=
+STUB_LIBS=
 if test -n "$ngx_module_link"; then
-    ngx_module_type=HTTP_AUX_FILTER
-    ngx_module_name=$ngx_addon_name
-    ngx_module_incs=
-    ngx_module_deps="$NGX_ADDON_DEPS"
-    ngx_module_srcs="$NGX_ADDON_SRCS"
-    ngx_module_libs=
-
-    . auto/module
+   ngx_module_type="$STUB_TYPE"
+   ngx_module_name="$ngx_addon_name"
+   ngx_module_deps="$STUB_DEPS"
+   ngx_module_srcs="$STUB_SRCS"
+   ngx_module_incs="$STUB_INCS"
+   ngx_module_libs="$STUB_LIBS"
+   . auto/module
 else
-    HTTP_AUX_FILTER_MODULES="$HTTP_AUX_FILTER_MODULES $ngx_addon_name"
-    NGX_ADDON_SRCS="$NGX_ADDON_SRCS"
-    NGX_ADDON_DEPS="$NGX_ADDON_DEPS"
+   eval "$STUB_TYPE"'_MODULES="$'"$STUB_TYPE"'_MODULES $ngx_addon_name"'
+   NGX_ADDON_DEPS="$NGX_ADDON_DEPS $STUB_DEPS"
+   NGX_ADDON_SRCS="$NGX_ADDON_SRCS $STUB_SRCS"
+   CORE_INCS="$CORE_INCS $STUB_INCS"
+   CORE_LIBS="$CORE_LIBS $STUB_LIBS"
 fi
