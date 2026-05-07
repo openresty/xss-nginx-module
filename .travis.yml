@@ -26,7 +26,7 @@ env:
     - LUA_INCLUDE_DIR=$LUAJIT_INC
     - LUA_CMODULE_DIR=/lib
     - JOBS=3
-    - PCRE_VER=10.46
+    - PCRE_VER=10.47
     - OPENSSL_PREFIX=/usr/local/openresty/pcre2
     - PCRE_LIB=$PCRE_PREFIX/lib
     - PCRE_INC=$PCRE_PREFIX/include
@@ -36,7 +36,7 @@ env:
     - NGX_BUILD_JOBS=$JOBS
     - TEST_NGINX_SLEEP=0.006
   matrix:
-    - NGINX_VERSION=1.29.4 OPENSSL_VER=3.5.4
+    - NGINX_VERSION=1.29.8 OPENSSL_VER=3.5.6
 
 install:
   - if [ ! -d download-cache ]; then mkdir download-cache; fi
@@ -58,6 +58,7 @@ install:
 script:
   - cd luajit2
   - make -j$JOBS CCDEBUG=-g Q= PREFIX=$LUAJIT_PREFIX CC=$CC XCFLAGS='-DLUA_USE_APICHECK -DLUA_USE_ASSERT' > build.log 2>&1 || (cat build.log && exit 1)
+  - cpanm --sudo --notest Test::Nginx IPC::Run Test2::Util > build.log 2>&1 || (cat build.log && exit 1)
   - sudo make install PREFIX=$LUAJIT_PREFIX > build.log 2>&1 || (cat build.log && exit 1)
   - cd ../test-nginx && sudo cpanm . && cd ..
   - export PATH=$PWD/work/nginx/sbin:$PWD/nginx-devel-utils:$PATH
