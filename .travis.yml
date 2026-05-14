@@ -36,7 +36,7 @@ env:
     - NGX_BUILD_JOBS=$JOBS
     - TEST_NGINX_SLEEP=0.006
   matrix:
-    - NGINX_VERSION=1.29.8 OPENSSL_VER=3.5.6
+    - NGINX_VERSION=1.31.0 OPENSSL_VER=3.5.6
 
 install:
   - if [ ! -d download-cache ]; then mkdir download-cache; fi
