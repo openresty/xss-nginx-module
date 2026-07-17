@@ -26,8 +26,7 @@ env:
     - LUA_INCLUDE_DIR=$LUAJIT_INC
     - LUA_CMODULE_DIR=/lib
     - JOBS=3
-    - PCRE_VER=10.47
-    - OPENSSL_PREFIX=/usr/local/openresty/pcre2
+    - PCRE_PREFIX=/usr/local/openresty/pcre2
     - PCRE_LIB=$PCRE_PREFIX/lib
     - PCRE_INC=$PCRE_PREFIX/include
     - OPENSSL_PREFIX=/usr/local/openresty/openssl3
@@ -36,7 +35,7 @@ env:
     - NGX_BUILD_JOBS=$JOBS
     - TEST_NGINX_SLEEP=0.006
   matrix:
-    - NGINX_VERSION=1.31.0 OPENSSL_VER=3.5.6
+    - NGINX_VERSION=1.31.3
 
 install:
   - if [ ! -d download-cache ]; then mkdir download-cache; fi
